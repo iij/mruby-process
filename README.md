@@ -14,7 +14,7 @@ end
 
 ## Features
 
- - Proccess ::kill, ::pid, ::ppid
+ - Proccess ::waitpid, ::pid, ::kill, ::fork, ::ppid
 
 ## License
 This software is licensed under the same license terms of the original mruby.

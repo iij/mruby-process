@@ -14,14 +14,65 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#ifndef _WIN32
 #include <sys/wait.h>
 #include <sys/select.h>
+#else
+#include <windows.h>
+#endif
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
+
+#ifdef _WIN32
+const char*
+emsg(DWORD err)
+{
+  if (err == 0) return "succeeded";
+  static char buf[256];
+  FormatMessage(
+    FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL,
+    err,
+    MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
+    buf,
+    sizeof buf,
+    NULL);
+  return buf;
+}
+
+#ifndef SIGKILL
+#define SIGKILL 9
+#endif
+
+int
+kill(int pid, int sig)
+{
+  HANDLE handle;
+  switch (sig) {
+    case SIGTERM:
+    case SIGKILL:
+    case SIGINT:
+      handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+      if (!TerminateProcess(handle, 1))
+        return -1;
+    default:
+      return -1;
+  }
+  return 0;
+}
+
+unsigned int
+sleep(unsigned int seconds)
+{
+  Sleep(seconds * 1000);
+  return seconds;
+}
+
+#endif
 
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
@@ -59,6 +110,7 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_f_fork(mrb_state *mrb, mrb_value klass)
 {
+#ifndef _WIN32
   mrb_value b, result;
   int pid;
 
@@ -79,6 +131,10 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
   default:
     return mrb_fixnum_value(pid);
   }
+#else
+   mrb_raise(mrb, E_RUNTIME_ERROR, emsg(ERROR_CALL_NOT_IMPLEMENTED));
+   return mrb_nil_value();
+#endif
 }
 
 static int
@@ -86,6 +142,7 @@ mrb_waitpid(int pid, int flags, int *st)
 {
   int result;
 
+#ifndef _WIN32
  retry:
   result = waitpid(pid, st, flags);
   if (result < 0) {
@@ -94,6 +151,10 @@ mrb_waitpid(int pid, int flags, int *st)
     }
     return -1;
   }
+#else
+  HANDLE handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+  result = WaitForSingleObject(handle, INFINITE) == WAIT_OBJECT_0 ? 0 : -1;
+#endif
 
   return result;
 }
@@ -135,8 +196,12 @@ mrb_f_sleep(mrb_state *mrb, mrb_value klass)
       tv.tv_usec = (mrb_float(argv[0]) - tv.tv_sec) * 1000000.0;
     }
 
-
+#ifdef _WIN32
+    n = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+    Sleep(n);
+#else
     n = select(0, 0, 0, 0, &tv);
+#endif
     if (n < 0)
       mrb_sys_fail(mrb, "mrb_f_sleep failed");
   } else {
@@ -157,7 +222,9 @@ mrb_f_system(mrb_state *mrb, mrb_value klass)
   mrb_value *argv, pname;
   const char *path;
   int argc;
+#ifdef SIGCHLD
   RETSIGTYPE (*chfunc)(int);
+#endif
 
   fflush(stdout);
   fflush(stderr);
@@ -174,9 +241,14 @@ mrb_f_system(mrb_state *mrb, mrb_value klass)
   path = mrb_string_value_cstr(mrb, &pname);
   ret = system(path);
 
+#ifndef _WIN32
   if (WIFEXITED(ret) && WEXITSTATUS(ret) == 0) {
     return mrb_true_value();
   }
+#else
+  if (ret != -1)
+    return mrb_true_value();
+#endif
 
   return mrb_false_value();
 }
@@ -210,7 +282,12 @@ mrb_f_pid(mrb_state *mrb, mrb_value klass)
 mrb_value
 mrb_f_ppid(mrb_state *mrb, mrb_value klass)
 {
+#ifndef _WIN32
   return mrb_fixnum_value((mrb_int)getppid());
+#else
+  mrb_raise(mrb, E_RUNTIME_ERROR, emsg(ERROR_CALL_NOT_IMPLEMENTED));
+  return mrb_nil_value();
+#endif
 }
 
 void

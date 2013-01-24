@@ -308,3 +308,10 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
 
   mrb_gv_set(mrb, mrb_intern(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
 }
+
+void
+mrb_mruby_process_gem_final(mrb_state *mrb)
+{
+}
+
+{

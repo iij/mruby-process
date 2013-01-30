@@ -28,7 +28,7 @@
 #include <errno.h>
 
 #ifdef _WIN32
-const char*
+static const char*
 emsg(DWORD err)
 {
   if (err == 0) return "succeeded";
@@ -291,7 +291,7 @@ mrb_f_ppid(mrb_state *mrb, mrb_value klass)
 }
 
 void
-mrb_mruby_process_gem_init(mrb_state *mrb)
+mrb_mruby_process_win32_gem_init(mrb_state *mrb)
 {
   struct RClass *p;
 
@@ -310,6 +310,6 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
 }
 
 void
-mrb_mruby_process_gem_final(mrb_state *mrb)
+mrb_mruby_process_win32_gem_final(mrb_state *mrb)
 {
 }

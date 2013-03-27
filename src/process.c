@@ -13,8 +13,8 @@
 #include "error.h"
 
 #include <sys/types.h>
-#include <sys/time.h>
 #ifndef _WIN32
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/select.h>
 #else
@@ -24,15 +24,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 #ifdef _WIN32
 static const char*
 emsg(DWORD err)
 {
-  if (err == 0) return "succeeded";
   static char buf[256];
+  if (err == 0) return "succeeded";
   FormatMessage(
     FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
     NULL,

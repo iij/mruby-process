@@ -14,7 +14,8 @@ end
 
 ## Features
 
- - Proccess ::waitpid, ::pid, ::kill, ::fork, ::ppid
+ - Process ::fork, ::kill, ::pid, ::ppid, ::waitpid, 
+ - Kernel $$, ::exit, ::fork, ::sleep, ::system
 
 
 ## License

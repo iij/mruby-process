@@ -219,6 +219,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   struct RClass *p;
 
   mrb_define_method(mrb, mrb->kernel_module, "exit", mrb_f_exit, ARGS_OPT(1));
+  mrb_define_method(mrb, mrb->kernel_module, "fork", mrb_f_fork, ARGS_NONE());
   mrb_define_method(mrb, mrb->kernel_module, "sleep", mrb_f_sleep, ARGS_ANY());
   mrb_define_method(mrb, mrb->kernel_module, "system", mrb_f_system, ARGS_ANY());
 

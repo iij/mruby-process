@@ -218,17 +218,17 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
 {
   struct RClass *p;
 
-  mrb_define_method(mrb, mrb->kernel_module, "exit", mrb_f_exit, ARGS_OPT(1));
-  mrb_define_method(mrb, mrb->kernel_module, "fork", mrb_f_fork, ARGS_NONE());
-  mrb_define_method(mrb, mrb->kernel_module, "sleep", mrb_f_sleep, ARGS_ANY());
-  mrb_define_method(mrb, mrb->kernel_module, "system", mrb_f_system, ARGS_ANY());
+  mrb_define_method(mrb, mrb->kernel_module, "exit",   mrb_f_exit,   MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, mrb->kernel_module, "fork",   mrb_f_fork,   MRB_ARGS_NONE());
+  mrb_define_method(mrb, mrb->kernel_module, "sleep",  mrb_f_sleep,  MRB_ARGS_ANY());
+  mrb_define_method(mrb, mrb->kernel_module, "system", mrb_f_system, MRB_ARGS_ANY());
 
   p = mrb_define_module(mrb, "Process");
-  mrb_define_class_method(mrb, p, "kill", mrb_f_kill, ARGS_ANY());
-  mrb_define_class_method(mrb, p, "fork", mrb_f_fork, ARGS_NONE());
-  mrb_define_class_method(mrb, p, "waitpid", mrb_f_waitpid, ARGS_ANY());
-  mrb_define_class_method(mrb, p, "pid", mrb_f_pid, ARGS_NONE());
-  mrb_define_class_method(mrb, p, "ppid", mrb_f_ppid, ARGS_NONE());
+  mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_ANY());
+  mrb_define_class_method(mrb, p, "fork",    mrb_f_fork,    MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, p, "waitpid", mrb_f_waitpid, MRB_ARGS_ANY());
+  mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());
 
   mrb_gv_set(mrb, mrb_intern(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
 }

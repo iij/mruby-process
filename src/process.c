@@ -23,6 +23,9 @@
 #include <unistd.h>
 #include <errno.h>
 
+static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
+
+
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {
@@ -184,21 +187,40 @@ mrb_f_system(mrb_state *mrb, mrb_value klass)
 mrb_value
 mrb_f_exit(mrb_state *mrb, mrb_value klass)
 {
-  mrb_value status;
-  int istatus;
+  return mrb_f_exit_common(mrb, 0);
+}
 
-  mrb_get_args(mrb, "|o", &status);
-  if (!mrb_nil_p(status)) {
-    if (mrb_type(status) == MRB_TT_TRUE)
-      istatus = EXIT_SUCCESS;
-    else {
-      istatus = mrb_fixnum(status);
-    }
-  } else {
-    istatus = EXIT_SUCCESS;
+mrb_value
+mrb_f_exit_bang(mrb_state *mrb, mrb_value klass)
+{
+  return mrb_f_exit_common(mrb, 1);
+}
+
+static mrb_value
+mrb_f_exit_common(mrb_state *mrb, int bang)
+{
+  mrb_value status;
+  int istatus, n;
+
+  n = mrb_get_args(mrb, "|o", &status);
+  if (n == 0) {
+    status = (bang) ? mrb_false_value() : mrb_true_value();
   }
 
-  exit(istatus);
+  if (mrb_type(status) == MRB_TT_TRUE) {
+    istatus = EXIT_SUCCESS;
+  } else if (mrb_type(status) == MRB_TT_FALSE) {
+    istatus = EXIT_FAILURE;
+  } else {
+    status = mrb_convert_type(mrb, status, MRB_TT_FIXNUM, "Integer", "to_int");
+    istatus = mrb_fixnum(status);
+  }
+
+  if (bang) {
+    _exit(istatus);
+  } else {
+    exit(istatus);
+  }
 }
 
 mrb_value
@@ -219,6 +241,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   struct RClass *p;
 
   mrb_define_method(mrb, mrb->kernel_module, "exit",   mrb_f_exit,   MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, mrb->kernel_module, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, mrb->kernel_module, "fork",   mrb_f_fork,   MRB_ARGS_NONE());
   mrb_define_method(mrb, mrb->kernel_module, "sleep",  mrb_f_sleep,  MRB_ARGS_ANY());
   mrb_define_method(mrb, mrb->kernel_module, "system", mrb_f_system, MRB_ARGS_ANY());

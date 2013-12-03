@@ -253,7 +253,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());
 
-  mrb_gv_set(mrb, mrb_intern(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
 }
 
 void

@@ -25,17 +25,47 @@
 
 static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
 
+static struct {
+  const char *name;
+  int no;
+} signals[] = {
+#include "signals.cstub"
+  { NULL, 0 }
+};
 
+#include <err.h>
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {
   mrb_int pid;
   mrb_value *argv, sigo;
-  int argc, sent, signo = 0;
+  int argc, i, sent, signo = 0;
+  size_t namelen;
+  const char *name;
 
   mrb_get_args(mrb, "oi*", &sigo, &pid, &argv, &argc);
   if (mrb_fixnum_p(sigo)) {
     signo = mrb_fixnum(sigo);
+  } else if (mrb_string_p(sigo) || mrb_symbol_p(sigo)) {
+    if (mrb_string_p(sigo)) {
+      name = RSTRING_PTR(sigo);
+      namelen = (size_t)RSTRING_LEN(sigo);
+    } else {
+      name = mrb_sym2name_len(mrb, mrb_symbol(sigo), &namelen);
+    }
+    if (namelen >= 3 && strncmp(name, "SIG", 3) == 0) {
+      name += 3;
+      namelen -= 3;
+    }
+    for (i = 0; signals[i].name != NULL; i++) {
+      if (strncmp(name, signals[i].name, namelen) == 0 && strlen(signals[i].name) == namelen) {
+        signo = signals[i].no;
+        break;
+      }
+    }
+      if (signals[i].name == NULL) {
+        mrb_raisef(mrb, E_ARGUMENT_ERROR, "unsupported name `SIG%S'", mrb_str_new(mrb, name, namelen));
+    }
   } else {
     mrb_raisef(mrb, E_TYPE_ERROR, "bad signal type %s",
     	       mrb_obj_classname(mrb, sigo));

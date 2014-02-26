@@ -14,8 +14,17 @@ end
 
 ## Features
 
- - Process ::fork, ::kill, ::pid, ::ppid, ::waitpid
- - Kernel $$, ::exit, ::exit!, ::fork, ::sleep, ::system
+ - Process - fork kill pid ppid waitpid waitpid2
+ - Process::Status - all methods but `&`, ``>>``
+   - You can use ``Process::Stauts.new(pid, status)`` to set ``$?`` in
+     your script or other mrbgems.
+ - Kernel - $$ exit exit! fork sleep system
+
+
+## Caveats
+
+ - $? may not work correctly on the platform where ``pid_t`` is not ``int`` or
+   ``MRB_INT_MAX`` is less than ``PID_MAX`` (or /proc/sys/kernel/pid_max).
 
 
 ## License

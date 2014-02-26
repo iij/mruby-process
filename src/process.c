@@ -1,7 +1,5 @@
 /*
 ** process.c - 
-**
-** See Copyright Notice in mruby.h
 */
 
 #include "mruby.h"
@@ -9,7 +7,6 @@
 #include "mruby/class.h"
 #include "mruby/string.h"
 #include "mruby/variable.h"
-#include "mruby/proc.h"
 #include "error.h"
 
 #include <sys/types.h>
@@ -17,13 +14,16 @@
 #include <sys/wait.h>
 #include <sys/select.h>
 #include <signal.h>
+#include <unistd.h>
+
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
-#include <unistd.h>
-#include <errno.h>
 
 static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
+static mrb_value mrb_procstat_new(mrb_state *mrb, mrb_int pid, mrb_int status);
 
 static struct {
   const char *name;
@@ -33,7 +33,6 @@ static struct {
   { NULL, 0 }
 };
 
-#include <err.h>
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {
@@ -119,7 +118,7 @@ mrb_waitpid(int pid, int flags, int *st)
 {
   int result;
 
- retry:
+retry:
   result = waitpid(pid, st, flags);
   if (result < 0) {
     if (errno == EINTR) {
@@ -142,6 +141,7 @@ mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
   if ((pid = mrb_waitpid(pid, flags, &status)) < 0)
     mrb_sys_fail(mrb, "waitpid failed");
 
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_procstat_new(mrb, pid, status));
   return mrb_fixnum_value(pid);
 }
 
@@ -265,10 +265,83 @@ mrb_f_ppid(mrb_state *mrb, mrb_value klass)
   return mrb_fixnum_value((mrb_int)getppid());
 }
 
+static mrb_value
+mrb_procstat_new(mrb_state *mrb, mrb_int pid, mrb_int status)
+{
+  struct RClass *cls;
+  cls = mrb_class_get_under(mrb, mrb_module_get(mrb, "Process"), "Status");
+  return mrb_funcall(mrb, mrb_obj_value(cls), "new", 2, mrb_fixnum_value(pid), mrb_fixnum_value(status));
+}
+
+static mrb_value
+mrb_procstat_coredump(mrb_state *mrb, mrb_value self)
+{
+#ifdef WCOREDUMP
+  int i = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+  return mrb_bool_value(WCOREDUMP(i));
+#else
+  return mrb_false_value();
+#endif
+}
+
+static mrb_value
+mrb_procstat_exitstatus(mrb_state *mrb, mrb_value self)
+{
+  int i = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+  if (WIFEXITED(i)) {
+    return mrb_fixnum_value(WEXITSTATUS(i));
+  } else {
+    return mrb_nil_value();
+  }
+}
+
+static mrb_value
+mrb_procstat_exited(mrb_state *mrb, mrb_value self)
+{
+  int i = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+  return mrb_bool_value(WIFEXITED(i));
+}
+
+static mrb_value
+mrb_procstat_signaled(mrb_state *mrb, mrb_value self)
+{
+  int i = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+  return mrb_bool_value(WIFSIGNALED(i));
+}
+
+static mrb_value
+mrb_procstat_stopped(mrb_state *mrb, mrb_value self)
+{
+  int i = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+  return mrb_bool_value(WIFSTOPPED(i));
+}
+
+static mrb_value
+mrb_procstat_stopsig(mrb_state *mrb, mrb_value self)
+{
+  int i = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+  if (WIFSTOPPED(i)) {
+    return mrb_fixnum_value(WSTOPSIG(i));
+  } else {
+    return mrb_nil_value();
+  }
+}
+
+static mrb_value
+mrb_procstat_termsig(mrb_state *mrb, mrb_value self)
+{
+  int i = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+  if (WIFSIGNALED(i)) {
+    return mrb_fixnum_value(WTERMSIG(i));
+  } else {
+    return mrb_nil_value();
+  }
+}
+
 void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
-  struct RClass *p;
+  struct RClass *p, *s;
 
   mrb_define_method(mrb, mrb->kernel_module, "exit",   mrb_f_exit,   MRB_ARGS_OPT(1));
   mrb_define_method(mrb, mrb->kernel_module, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
@@ -283,7 +356,17 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());
 
+  s = mrb_define_class_under(mrb, p, "Status", mrb->object_class);
+  mrb_define_method(mrb, s, "coredump?", mrb_procstat_coredump, MRB_ARGS_NONE());
+  mrb_define_method(mrb, s, "exited?", mrb_procstat_exited, MRB_ARGS_NONE());
+  mrb_define_method(mrb, s, "exitstatus", mrb_procstat_exitstatus, MRB_ARGS_NONE());
+  mrb_define_method(mrb, s, "signaled?", mrb_procstat_signaled, MRB_ARGS_NONE());
+  mrb_define_method(mrb, s, "stopped?", mrb_procstat_stopped, MRB_ARGS_NONE());
+  mrb_define_method(mrb, s, "stopsig", mrb_procstat_stopsig, MRB_ARGS_NONE());
+  mrb_define_method(mrb, s, "termsig", mrb_procstat_termsig, MRB_ARGS_NONE());
+
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_nil_value());
 }
 
 void

@@ -33,6 +33,14 @@ static struct {
   { NULL, 0 }
 };
 
+#if MRUBY_RELEASE_NO < 10000
+static struct RClass *
+mrb_module_get(mrb_state *mrb, const char *name)
+{
+  return mrb_class_get(mrb, name);
+}
+#endif
+
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {

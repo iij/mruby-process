@@ -190,8 +190,6 @@ mrb_f_sleep(mrb_state *mrb, mrb_value klass)
   return mrb_fixnum_value(end);
 }
 
-#define RETSIGTYPE void
-
 mrb_value
 mrb_f_system(mrb_state *mrb, mrb_value klass)
 {
@@ -199,7 +197,7 @@ mrb_f_system(mrb_state *mrb, mrb_value klass)
   mrb_value *argv, pname;
   const char *path;
   int argc;
-  RETSIGTYPE (*chfunc)(int);
+  void (*chfunc)(int);
 
   fflush(stdout);
   fflush(stderr);
@@ -210,11 +208,11 @@ mrb_f_system(mrb_state *mrb, mrb_value klass)
   }
 
   pname = argv[0];
-#ifdef SIGCHLD
-  chfunc = signal(SIGCHLD, SIG_DFL);
-#endif
   path = mrb_string_value_cstr(mrb, &pname);
+
+  chfunc = signal(SIGCHLD, SIG_DFL);
   ret = system(path);
+  signal(SIGCHLD, chfunc);
 
   if (WIFEXITED(ret) && WEXITSTATUS(ret) == 0) {
     return mrb_true_value();

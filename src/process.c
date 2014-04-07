@@ -44,10 +44,10 @@ mrb_module_get(mrb_state *mrb, const char *name)
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {
-  mrb_int pid;
+  mrb_int namelen, pid;
   mrb_value *argv, sigo;
   int argc, i, sent, signo = 0;
-  size_t namelen;
+  size_t symlen;
   const char *name;
 
   mrb_get_args(mrb, "oi*", &sigo, &pid, &argv, &argc);
@@ -65,7 +65,8 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
       namelen -= 3;
     }
     for (i = 0; signals[i].name != NULL; i++) {
-      if (strncmp(name, signals[i].name, namelen) == 0 && strlen(signals[i].name) == namelen) {
+      symlen = strlen(signals[i].name);
+      if (symlen == namelen && strncmp(name, signals[i].name, symlen) == 0) {
         signo = signals[i].no;
         break;
       }

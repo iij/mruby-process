@@ -44,9 +44,9 @@ mrb_module_get(mrb_state *mrb, const char *name)
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {
-  mrb_int namelen, pid;
+  mrb_int namelen, pid, argc;
   mrb_value *argv, sigo;
-  int argc, i, sent, signo = 0;
+  int i, sent, signo = 0;
   size_t symlen;
   const char *name;
 
@@ -75,8 +75,8 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
         mrb_raisef(mrb, E_ARGUMENT_ERROR, "unsupported name `SIG%S'", mrb_str_new(mrb, name, namelen));
     }
   } else {
-    mrb_raisef(mrb, E_TYPE_ERROR, "bad signal type %s",
-    	       mrb_obj_classname(mrb, sigo));
+    mrb_raisef(mrb, E_TYPE_ERROR, "bad signal type %S",
+    	       mrb_obj_value(mrb_class(mrb, sigo)));
   }
 
   sent = 0;
@@ -86,8 +86,8 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
 
   while (argc-- > 0) {
     if (!mrb_fixnum_p(*argv)) {
-      mrb_raisef(mrb, E_TYPE_ERROR, "wrong argument type %s (expected Fixnum)",
-      	         mrb_obj_classname(mrb, *argv));
+      mrb_raisef(mrb, E_TYPE_ERROR, "wrong argument type %S (expected Fixnum)",
+      	         mrb_obj_value(mrb_class(mrb, *argv)));
     }
     if (kill(mrb_fixnum(*argv), signo) == -1)
       mrb_sys_fail(mrb, "kill");
@@ -157,7 +157,7 @@ mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
 mrb_value
 mrb_f_sleep(mrb_state *mrb, mrb_value klass)
 {
-  int argc;
+  mrb_int argc;
   mrb_value *argv;
   time_t beg, end;
 
@@ -196,7 +196,7 @@ mrb_f_system(mrb_state *mrb, mrb_value klass)
   int ret;
   mrb_value *argv, pname;
   const char *path;
-  int argc;
+  mrb_int argc;
   void (*chfunc)(int);
 
   fflush(stdout);

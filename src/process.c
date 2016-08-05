@@ -7,7 +7,7 @@
 #include "mruby/class.h"
 #include "mruby/string.h"
 #include "mruby/variable.h"
-#include "error.h"
+#include "mruby/error.h"
 
 #include <sys/types.h>
 #include <sys/time.h>

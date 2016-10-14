@@ -16,7 +16,7 @@ end
 
  - Process - fork kill pid ppid waitpid waitpid2
  - Process::Status - all methods but `&`, ``>>``
-   - You can use ``Process::Stauts.new(pid, status)`` to set ``$?`` in
+   - You can use ``Process::Status.new(pid, status)`` to set ``$?`` in
      your script or other mrbgems.
  - Kernel - $$ exit exit! fork sleep system
 

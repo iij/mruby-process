@@ -44,11 +44,16 @@ mrb_module_get(mrb_state *mrb, const char *name)
 mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {
-  mrb_int namelen, pid, argc;
+  mrb_int pid, argc;
   mrb_value *argv, sigo;
   int i, sent, signo = 0;
   size_t symlen;
   const char *name;
+#if MRUBY_RELEASE_NO < 10000
+  size_t namelen;
+#else
+  mrb_int namelen;
+#endif
 
   mrb_get_args(mrb, "oi*", &sigo, &pid, &argv, &argc);
   if (mrb_fixnum_p(sigo)) {

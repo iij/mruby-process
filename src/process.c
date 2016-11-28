@@ -112,6 +112,7 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
 
   switch (pid = fork()) {
   case 0:
+    mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
     if (!mrb_nil_p(b)) {
       mrb_yield_argv(mrb, b, 0, NULL);
       _exit(0);

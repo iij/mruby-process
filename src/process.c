@@ -155,6 +155,11 @@ mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
   if ((pid = mrb_waitpid(pid, flags, &status)) < 0)
     mrb_sys_fail(mrb, "waitpid failed");
 
+  if (!pid && (flags & WNOHANG)) {
+    mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_nil_value());
+    return mrb_nil_value();
+  }
+
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_procstat_new(mrb, pid, status));
   return mrb_fixnum_value(pid);
 }

@@ -7,7 +7,11 @@ assert("Process.fork with WNOHUNG") do
   assert_nil(s)
 
   Process.kill :TERM, pid
-  p, s = Process.waitpid2(pid, Process::WNOHANG)
+  loop {
+    # wait until the process completely killed with non-block mode
+    p, s = Process.waitpid2(pid, Process::WNOHANG)
+    break if p
+  }
   assert_equal(pid, p)
   assert_true(s.signaled?)
 end

@@ -1,4 +1,4 @@
-assert("Process.fork with WNOHUNG") do
+assert("Process.fork with WNOHANG") do
   pid = fork {
     loop {}
   }

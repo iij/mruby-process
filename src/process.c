@@ -155,6 +155,11 @@ mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
   if ((pid = mrb_waitpid(pid, flags, &status)) < 0)
     mrb_sys_fail(mrb, "waitpid failed");
 
+  if (!pid && (flags & WNOHANG)) {
+    mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_nil_value());
+    return mrb_nil_value();
+  }
+
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_procstat_new(mrb, pid, status));
   return mrb_fixnum_value(pid);
 }
@@ -376,6 +381,9 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, s, "stopped?", mrb_procstat_stopped, MRB_ARGS_NONE());
   mrb_define_method(mrb, s, "stopsig", mrb_procstat_stopsig, MRB_ARGS_NONE());
   mrb_define_method(mrb, s, "termsig", mrb_procstat_termsig, MRB_ARGS_NONE());
+
+  mrb_define_const(mrb, p, "WNOHANG", mrb_fixnum_value(WNOHANG));
+  mrb_define_const(mrb, p, "WUNTRACED", mrb_fixnum_value(WUNTRACED));
 
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_nil_value());

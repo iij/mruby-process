@@ -1,5 +1,7 @@
 mruby-process
 =========
+[![Build Status](https://travis-ci.org/iij/mruby-process.svg?branch=master)](https://travis-ci.org/iij/mruby-process)
+
 
 ## install by mrbgems
  - add conf.gem line to `build_config.rb`

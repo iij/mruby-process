@@ -28,8 +28,5 @@ env:
 - MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=1.2.0
 - MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=head
 
-before_script:
-- echo $CC
-
 script:
 - rake test

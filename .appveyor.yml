@@ -21,14 +21,26 @@
 version: "{build}"
 
 image:
-# - Visual Studio 2013
-# - Visual Studio 2015
 - Visual Studio 2017
 
 environment:
   matrix:
-  - MRUBY_VERSION: 1.2.0
-  - MRUBY_VERSION: head
+  - arch: x64
+    compiler: msvc2017
+    backend: vs2017
+    MRUBY_VERSION: 1.2.0
+  - arch: x86
+    compiler: msvc2017
+    backend: vs2017
+    MRUBY_VERSION: head
+  - arch: x64
+    compiler: msys2-mingw
+    backend: vs2017
+    MRUBY_VERSION: 1.2.0
+  - arch: x86
+    compiler: msys2-mingw
+    backend: vs2017
+    MRUBY_VERSION: head
 
 install:
 - set PATH=C:\Ruby23-x64\bin;%PATH%

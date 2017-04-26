@@ -1,36 +1,35 @@
-/*
-** process.c -
-*/
+/* MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include "mruby.h"
-#include "mruby/array.h"
-#include "mruby/class.h"
-#include "mruby/string.h"
 #include "mruby/variable.h"
-#include "mruby/proc.h"
-#include "error.h"
 
-#include <sys/types.h>
-#ifndef _WIN32
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <sys/select.h>
-#else
-#include <windows.h>
-#endif
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #ifndef _MSC_VER
-#include <unistd.h>
+# include <unistd.h>
 #endif
-#include <errno.h>
 
 #ifdef _WIN32
-#include "process_win32.c"
+# include "process_win32.c"
 #else
-#include "process_posix.c"
+# include "process_posix.c"
 #endif
 
 void
@@ -70,4 +69,5 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
 void
 mrb_mruby_process_gem_final(mrb_state *mrb)
 {
+
 }

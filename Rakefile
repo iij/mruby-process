@@ -1,6 +1,5 @@
 # MIT License
 #
-#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -22,23 +21,27 @@
 MRUBY_CONFIG  = File.expand_path(ENV['MRUBY_CONFIG'] || 'build_config.rb')
 MRUBY_VERSION = ENV['MRUBY_VERSION'] || 'head'
 
+def env(name)
+  "#{'set ' if Gem.win_platform?}#{name}=#{Object.const_get(name)}"
+end
+
 file :mruby do
   if MRUBY_VERSION == 'head'
     sh 'git clone --depth 1 git://github.com/mruby/mruby.git'
   else
     sh "curl -L --fail --retry 3 --retry-delay 1 https://github.com/mruby/mruby/archive/#{MRUBY_VERSION}.tar.gz -s -o - | tar zxf -"
-    FileUtils.mv("mruby-#{MRUBY_VERSION}", 'mruby')
+    mv "mruby-#{MRUBY_VERSION}", 'mruby'
   end
 end
 
 desc 'compile binary'
 task compile: :mruby do
-  sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby minirake all"
+  sh "cd mruby && #{env :MRUBY_CONFIG} ruby minirake all"
 end
 
 desc 'test'
 task test: :mruby do
-  sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby minirake test"
+  sh "cd mruby && #{env :MRUBY_CONFIG} ruby minirake all"
 end
 
 desc 'cleanup'

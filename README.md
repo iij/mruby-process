@@ -1,6 +1,5 @@
-mruby-process
-=========
-[![Build Status](https://travis-ci.org/iij/mruby-process.svg?branch=master)](https://travis-ci.org/iij/mruby-process)
+mruby-process [![Build Status](https://travis-ci.org/appPlant/mruby-process.svg?branch=windows)](https://travis-ci.org/appPlant/mruby-process) [![Build status](https://ci.appveyor.com/api/projects/status/1uu04u7wtbup1oqk/branch/windows?svg=true)](https://ci.appveyor.com/project/katzer/mruby-process/branch/windows) 
+=============
 
 
 ## install by mrbgems

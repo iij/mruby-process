@@ -1,5 +1,6 @@
 # MIT License
 #
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -18,18 +19,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-language: c
+MRUBY_CONFIG  = File.expand_path(ENV['MRUBY_CONFIG'] || 'build_config.rb')
+MRUBY_VERSION = ENV['MRUBY_VERSION'] || 'head'
 
-compiler:
-- gcc
-- clang
+file :mruby do
+  if MRUBY_VERSION == 'head'
+    sh 'git clone --depth 1 git://github.com/mruby/mruby.git'
+  else
+    sh "curl -L --fail --retry 3 --retry-delay 1 https://github.com/mruby/mruby/archive/#{MRUBY_VERSION}.tar.gz -s -o - | tar zxf -"
+    FileUtils.mv("mruby-#{MRUBY_VERSION}", 'mruby')
+  end
+end
 
-env:
-- MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=1.2.0
-- MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=head
+desc 'compile binary'
+task compile: :mruby do
+  sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby minirake all"
+end
 
-before_script:
-- echo $CC
+desc 'test'
+task test: :mruby do
+  sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby minirake test"
+end
 
-script:
-- rake test
+desc 'cleanup'
+task :clean do
+  sh 'cd mruby && ruby minirake deep_clean'
+end

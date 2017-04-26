@@ -1,5 +1,6 @@
 # MIT License
 #
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -18,18 +19,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-language: c
+MRuby::Build.new do |conf|
+  toolchain ENV.fetch('CC', :gcc)
 
-compiler:
-- gcc
-- clang
+  conf.enable_debug
+  conf.enable_test
 
-env:
-- MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=1.2.0
-- MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=head
-
-before_script:
-- echo $CC
-
-script:
-- rake test
+  conf.gem core: 'mruby-print'
+  conf.gem File.expand_path(File.dirname(__FILE__))
+end

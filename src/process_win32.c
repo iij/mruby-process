@@ -128,25 +128,8 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_f_fork(mrb_state *mrb, mrb_value klass)
 {
+  mrb_raise(mrb, E_RUNTIME_ERROR, emsg(ERROR_CALL_NOT_IMPLEMENTED));
   return mrb_nil_value();
-  //TODO implement win fork
-  LPCTSTR lpApplicationName = NULL;
-  LPTSTR lpCommandLine = NULL;
-  LPSECURITY_ATTRIBUTES lpProcessAttributes = 0;
-  LPSECURITY_ATTRIBUTES lpThreadAttributes = 0;
-  BOOL bInheritHandles = NULL;
-  DWORD dwCreationFlags = NULL;
-  LPVOID lpEnvironment = NULL;
-  LPCTSTR lpCurrentDirectory = NULL;
-  LPSTARTUPINFO lpStartupInfo = NULL;
-  LPPROCESS_INFORMATION lpProcessInformation = NULL;
-  bool success = CreateProcess(lpApplicationName,lpCommandLine,lpProcessAttributes,
-                               lpThreadAttributes,bInheritHandles,dwCreationFlags,
-                               lpEnvironment,lpCurrentDirectory,lpStartupInfo,
-                               lpProcessInformation);
-  if(!success)
-  mrb_raisef(mrb, E_TYPE_ERROR, "failed to create process",
-             mrb_obj_classname(mrb, *argv));
 }
 
 static int

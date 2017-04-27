@@ -32,17 +32,9 @@ environment:
   - arch: x86
     compiler: msvc2017
     backend: vs2017
-    MRUBY_VERSION: head
-  - arch: x64
-    compiler: msys2-mingw
-    backend: vs2017
-    MRUBY_VERSION: 1.2.0
-  - arch: x86
-    compiler: msys2-mingw
-    backend: vs2017
-    MRUBY_VERSION: head
 
 install:
+- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
 - set PATH=C:\Ruby23-x64\bin;%PATH%
 
 build_script:

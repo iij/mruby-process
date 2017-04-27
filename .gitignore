@@ -10,6 +10,9 @@
 /test/tmp/
 /test/version_tmp/
 /tmp/
+/src/origorig
+/.idea/
+/cmake-build-debug/
 
 # Used by dotenv library to load environment variables.
 # .env

@@ -23,12 +23,26 @@ version: "{build}"
 image:
 - Visual Studio 2015
 
+environment:
+  matrix:
+  - MRUBY_VERSION: 1.2.0
+    COMPILER: C:\MinGW # MinGW 32-bit 5.3.0
+  - MRUBY_VERSION: head
+    COMPILER: C:\MinGW # MinGW 32-bit 5.3.0
+    CFLAGS: -m32
+  - MRUBY_VERSION: head
+    COMPILER: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0 # MinGW-w64 5.3.0
+  - MRUBY_VERSION: head
+    COMPILER: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1 # MinGW-w64 6.3.0
+
 install:
-- SET PATH=C:\MinGW\bin;%PATH%
+- SET PATH=%COMPILER%\bin;%PATH%
 - SET PATH=C:\Ruby23-x64\bin;%PATH%
+- SET PATH=C:\cygwin\bin;%PATH%
 - gcc --version
 
 build_script:
+- set MRUBY_CONFIG=%APPVEYOR_BUILD_FOLDER%\appveyor_config.rb
 - rake compile
 
 # test_script:

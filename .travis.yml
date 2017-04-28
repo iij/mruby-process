@@ -25,8 +25,8 @@ compiler:
 - clang
 
 env:
-- MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=1.2.0
-- MRUBY_CONFIG=travis_config.rb MRUBY_VERSION=head
+- MRUBY_CONFIG=$TRAVIS_BUILD_DIR/travis_config.rb MRUBY_VERSION=1.2.0
+- MRUBY_CONFIG=$TRAVIS_BUILD_DIR/travis_config.rb MRUBY_VERSION=head
 
 script:
-- rake test
+- rake compile

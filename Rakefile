@@ -21,8 +21,12 @@
 MRUBY_CONFIG  = File.expand_path(ENV['MRUBY_CONFIG'] || 'build_config.rb')
 MRUBY_VERSION = ENV['MRUBY_VERSION'] || 'head'
 
-def env(name)
-  "#{'set ' if Gem.win_platform?}#{name}=#{Object.const_get(name)}"
+def mtask(cmd)
+  if Gem.win_platform?
+    Dir.chdir('mruby') { sh "set MRUBY_CONFIG=#{MRUBY_CONFIG} && ruby minirake #{cmd}" }
+  else
+    sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby minirake #{cmd}"
+  end
 end
 
 file :mruby do
@@ -36,15 +40,15 @@ end
 
 desc 'compile binary'
 task compile: :mruby do
-  sh "cd mruby && #{env :MRUBY_CONFIG} ruby minirake all"
+  mtask 'all'
 end
 
 desc 'test'
 task test: :mruby do
-  sh "cd mruby && #{env :MRUBY_CONFIG} ruby minirake all"
+  mtask 'test'
 end
 
 desc 'cleanup'
 task :clean do
-  sh 'cd mruby && ruby minirake deep_clean'
+  mtask 'deep_clean'
 end

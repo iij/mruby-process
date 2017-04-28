@@ -1,6 +1,5 @@
 # MIT License
 #
-#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -20,10 +19,12 @@
 # SOFTWARE.
 
 MRuby::Build.new do |conf|
-  toolchain :gcc
+  toolchain ENV.fetch('TOOLCHAIN', :gcc)
 
   conf.enable_debug
   conf.enable_test
+
+  conf.build_mrbc_exec
 
   conf.gem core: 'mruby-print'
   conf.gem File.expand_path(File.dirname(__FILE__))

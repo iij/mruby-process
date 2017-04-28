@@ -24,6 +24,9 @@ image:
 - Visual Studio 2015
 
 environment:
+  global:
+    VCVARSALL: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
+    TOOLCHAIN: gcc
   matrix:
   - MRUBY_VERSION: 1.2.0
     COMPILER: C:\MinGW # MinGW 32-bit 5.3.0
@@ -34,15 +37,23 @@ environment:
     COMPILER: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0 # MinGW-w64 5.3.0
   - MRUBY_VERSION: head
     COMPILER: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1 # MinGW-w64 6.3.0
+  - MRUBY_VERSION: 1.2.0
+    COMPILER: C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC # Visual Studio 2015
+    TOOLCHAIN: visualcpp
 
-install:
+matrix:
+  allow_failures:
+  - TOOLCHAIN: visualcpp
+
+init:
+- CALL "%VCVARSALL%" amd64
 - SET PATH=%COMPILER%\bin;%PATH%
 - SET PATH=C:\Ruby23-x64\bin;%PATH%
 - SET PATH=C:\cygwin\bin;%PATH%
+- SET MRUBY_CONFIG=%APPVEYOR_BUILD_FOLDER%\appveyor_config.rb
 - gcc --version
 
 build_script:
-- set MRUBY_CONFIG=%APPVEYOR_BUILD_FOLDER%\appveyor_config.rb
 - rake compile
 
 # test_script:

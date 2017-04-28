@@ -23,9 +23,11 @@ MRUBY_VERSION = ENV['MRUBY_VERSION'] || 'head'
 
 def mtask(cmd)
   if Gem.win_platform?
-    Dir.chdir('mruby') { sh "set MRUBY_CONFIG=#{MRUBY_CONFIG} && ruby minirake #{cmd}" }
+    Dir.chdir('mruby') do
+      sh "set MRUBY_CONFIG=#{MRUBY_CONFIG} && ruby .\\minirake #{cmd}"
+    end
   else
-    sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby minirake #{cmd}"
+    sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ./minirake #{cmd}"
   end
 end
 
@@ -40,7 +42,7 @@ end
 
 desc 'compile binary'
 task compile: :mruby do
-  mtask 'all'
+  mtask 'all --verbose'
 end
 
 desc 'test'

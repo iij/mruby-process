@@ -21,21 +21,12 @@
 version: "{build}"
 
 image:
-- Visual Studio 2017
-
-environment:
-  matrix:
-  - arch: x64
-    compiler: msvc2017
-    backend: vs2017
-    MRUBY_VERSION: 1.2.0
-  - arch: x86
-    compiler: msvc2017
-    backend: vs2017
+- Visual Studio 2015
 
 install:
-- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch%
-- set PATH=C:\Ruby23-x64\bin;%PATH%
+- SET PATH=C:\MinGW\bin;%PATH%
+- SET PATH=C:\Ruby23-x64\bin;%PATH%
+- gcc --version
 
 build_script:
 - rake compile

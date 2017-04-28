@@ -7,8 +7,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -21,314 +21,201 @@
 
 #ifdef _WIN32
 
+#include "process.h"
 
-
-#include "mruby.h"
-#include "mruby/array.h"
-#include "mruby/class.h"
-#include "mruby/string.h"
-#include "mruby/variable.h"
-#include "mruby/proc.h"
-#include "error.h"
-
-#include <sys/types.h>
 #include <windows.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
-#include <errno.h>
 
+/* License: Ruby's */
+static struct ChildRecord {
+  HANDLE hProcess;
+  pid_t pid;
+} ChildRecord[256];
 
+/* License: Ruby's */
+#define FOREACH_CHILD(v) do { \
+  struct ChildRecord* v; \
+  for (v = ChildRecord; v < ChildRecord + sizeof(ChildRecord) / sizeof(ChildRecord[0]); ++v)
+#define END_FOREACH_CHILD } while (0)
 
+static FARPROC get_proc_address(const char *module, const char *func, HANDLE *mh);
+static struct ChildRecord *FindChildSlot(pid_t pid);
 
-
-
-
-static const char*
-emsg(DWORD err)
+/* License: Ruby's */
+pid_t
+getpid(void)
 {
-  static char buf[256];
-  if (err == 0) return "succeeded";
-  FormatMessage(
-    FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-    NULL,
-    err,
-    MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
-    buf,
-    sizeof buf,
-    NULL);
-  return buf;
+  return GetCurrentProcessId();
 }
 
-#ifndef SIGKILL
-#define SIGKILL 9
-#endif
+/* License: Ruby's */
+pid_t
+getppid(void)
+{
+  typedef long (WINAPI query_func)(HANDLE, int, void *, ULONG, ULONG *);
+  static query_func *pNtQueryInformationProcess = (query_func *)-1;
+  pid_t ppid = 0;
 
+    if (pNtQueryInformationProcess == (query_func *)-1)
+      pNtQueryInformationProcess = (query_func *)get_proc_address("ntdll.dll", "NtQueryInformationProcess", NULL);
+
+    if (pNtQueryInformationProcess) {
+      struct {
+        long ExitStatus;
+        void* PebBaseAddress;
+        uintptr_t AffinityMask;
+        uintptr_t BasePriority;
+        uintptr_t UniqueProcessId;
+        uintptr_t ParentProcessId;
+      } pbi;
+      ULONG len;
+      long ret = pNtQueryInformationProcess(GetCurrentProcess(), 0, &pbi, sizeof(pbi), &len);
+      if (!ret) {
+        ppid = pbi.ParentProcessId;
+      }
+    }
+
+    return ppid;
+}
+
+/* License: Artistic or GPL */
+pid_t
+waitpid(pid_t pid, int *stat_loc, int options)
+{
+  DWORD timeout;
+  HANDLE hProc;
+  struct ChildRecord* child;
+
+  child = FindChildSlot(pid);
+  if (child) {
+    hProc = child->hProcess;
+  }
+  if (hProc == NULL || hProc == INVALID_HANDLE_VALUE) {
+    return -1;
+  }
+
+  /* Artistic or GPL part start */
+  if (options == WNOHANG) {
+    timeout = 0;
+  }
+  else {
+    timeout = INFINITE;
+  }
+  /* Artistic or GPL part end */
+
+  return (WaitForSingleObject(hProc, timeout) == WAIT_OBJECT_0) ? pid : -1;
+}
+
+/* License: Ruby's */
 int
-kill(int pid, int sig)
+kill(pid_t pid, int sig)
 {
-  HANDLE handle;
+  pid_t ret = 0;
+  DWORD ctrlEvent;
+  HANDLE hProc;
+  struct ChildRecord* child;
+
+  if (pid < 0 || (pid == 0 && sig != SIGINT)) {
+    return -1;
+  }
+
+  if ((unsigned int)pid == GetCurrentProcessId() &&
+    (sig != 0 && sig != SIGKILL)) {
+    ret = raise(sig);
+    return ret;
+  }
+
   switch (sig) {
-    case SIGTERM:
-    case SIGKILL:
+    case 0:
+      hProc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
+      if (hProc == NULL || hProc == INVALID_HANDLE_VALUE) {
+        ret = -1;
+      }
+      else {
+        CloseHandle(hProc);
+      }
+      break;
+
     case SIGINT:
-      handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
-      if (!TerminateProcess(handle, 1))
-        return -1;
+      ctrlEvent = CTRL_C_EVENT;
+      if (pid != 0) {
+        ctrlEvent = CTRL_BREAK_EVENT;
+      }
+      if (!GenerateConsoleCtrlEvent(ctrlEvent, (DWORD)pid)) {
+        ret = -1;
+      }
+      break;
+
+    case SIGKILL:
+      child = FindChildSlot(pid);
+      if (child) {
+        hProc = child->hProcess;
+      }
+      else {
+        hProc = OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, FALSE, (DWORD)pid);
+      }
+      if (hProc == NULL || hProc == INVALID_HANDLE_VALUE) {
+        ret = -1;
+      }
+      else {
+        DWORD status;
+        if (!GetExitCodeProcess(hProc, &status)) {
+          ret = -1;
+        }
+        else if (status == STILL_ACTIVE) {
+          if (!TerminateProcess(hProc, 0)) {
+            ret = -1;
+          }
+        }
+        else {
+          ret = -1;
+        }
+        if (!child) {
+          CloseHandle(hProc);
+        }
+      break;
+    }
+
     default:
-      return -1;
-  }
-  return 0;
-}
-
-unsigned int
-sleep(unsigned int seconds)
-{
-  Sleep(seconds * 1000);
-  return seconds;
-}
-
-mrb_value
-mrb_f_kill(mrb_state *mrb, mrb_value klass)
-{
-  mrb_int pid;
-  mrb_value *argv, sigo;
-  int argc, sent, signo = 0;
-
-  mrb_get_args(mrb, "oi*", &sigo, &pid, &argv, &argc);
-  if (mrb_fixnum_p(sigo)) {
-    signo = mrb_fixnum(sigo);
-  } else {
-    mrb_raisef(mrb, E_TYPE_ERROR, "bad signal type %s",
-    	       mrb_obj_classname(mrb, sigo));
+      ret = -1;
   }
 
-  sent = 0;
-  if (kill(pid, signo) == -1)
-    mrb_sys_fail(mrb, "kill");
-  sent++;
+  return ret;
+}
 
-  while (argc-- > 0) {
-    if (!mrb_fixnum_p(*argv)) {
-      mrb_raisef(mrb, E_TYPE_ERROR, "wrong argument type %s (expected Fixnum)",
-      	         mrb_obj_classname(mrb, *argv));
+/* License: Ruby's */
+static struct ChildRecord *
+FindChildSlot(pid_t pid)
+{
+  FOREACH_CHILD(child) {
+    if (child->pid == pid) {
+      return child;
     }
-    if (kill(mrb_fixnum(*argv), signo) == -1)
-      mrb_sys_fail(mrb, "kill");
-    sent++;
-    argv++;
-  }
-  return mrb_fixnum_value(sent);
+  } END_FOREACH_CHILD;
+  return NULL;
 }
 
-static mrb_value
-mrb_f_fork(mrb_state *mrb, mrb_value klass)
+/* License: Ruby's */
+static FARPROC
+get_proc_address(const char *module, const char *func, HANDLE *mh)
 {
-  mrb_raise(mrb, E_RUNTIME_ERROR, emsg(ERROR_CALL_NOT_IMPLEMENTED));
-  return mrb_nil_value();
-}
+    HANDLE h;
+    FARPROC ptr;
 
-static int
-mrb_waitpid(int pid, int flags, int *st)
-{
-  int result;
+    if (mh)
+      h = LoadLibrary(module);
+    else
+      h = GetModuleHandle(module);
+    if (!h)
+      return NULL;
 
-  HANDLE handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
-  result = WaitForSingleObject(handle, INFINITE) == WAIT_OBJECT_0 ? 0 : -1;
-
-  return result;
-}
-
-static mrb_value
-mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
-{
-  mrb_int pid, flags = 0;
-  int status;
-
-  mrb_get_args(mrb, "i|i", &pid, &flags);
-
-  if ((pid = mrb_waitpid(pid, flags, &status)) < 0)
-    mrb_sys_fail(mrb, "waitpid failed");
-
-  return mrb_fixnum_value(pid);
-}
-
-mrb_value
-mrb_f_sleep(mrb_state *mrb, mrb_value klass)
-{
-  int argc;
-  mrb_value *argv;
-  time_t beg, end;
-
-  beg = time(0);
-  mrb_get_args(mrb, "*", &argv, &argc);
-  if (argc == 0) {
-    sleep((32767<<16)+32767);
-  } else if(argc == 1) {
-    struct timeval tv;
-    int n;
-
-    if (mrb_fixnum_p(argv[0])) {
-      tv.tv_sec = mrb_fixnum(argv[0]);
-      tv.tv_usec = 0;
-    } else {
-      tv.tv_sec = mrb_float(argv[0]);
-      tv.tv_usec = (mrb_float(argv[0]) - tv.tv_sec) * 1000000.0;
+    ptr = GetProcAddress(h, func);
+    if (mh) {
+      if (ptr)
+        *mh = h;
+      else
+        FreeLibrary(h);
     }
-    n = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-
-    Sleep(n);
-
-    if (n < 0)
-      mrb_sys_fail(mrb, "mrb_f_sleep failed");
-  } else {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong # of arguments");
-  }
-
-  end = time(0) - beg;
-
-  return mrb_fixnum_value(end);
-}
-
-mrb_value
-mrb_f_system(mrb_state *mrb, mrb_value klass)
-{
-  int ret;
-  mrb_value *argv, pname;
-  const char *path;
-  int argc;
-#ifdef SIGCHLD
-  RETSIGTYPE (*chfunc)(int);
-#endif
-
-  fflush(stdout);
-  fflush(stderr);
-
-  mrb_get_args(mrb, "*", &argv, &argc);
-  if (argc == 0) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong number of arguments");
-  }
-
-  pname = argv[0];
-#ifdef SIGCHLD
-  chfunc = signal(SIGCHLD, SIG_DFL);
-#endif
-  path = mrb_string_value_cstr(mrb, &pname);
-  ret = system(path);
-
-  if (ret != -1)
-    return mrb_true_value();
-
-  return mrb_false_value();
-}
-
-mrb_value
-mrb_f_exit(mrb_state *mrb, mrb_value klass)
-{
-  //TODO not win spec
-  mrb_value status;
-  int istatus;
-
-  mrb_get_args(mrb, "|o", &status);
-  if (!mrb_nil_p(status)) {
-    if (mrb_type(status) == MRB_TT_TRUE)
-      istatus = EXIT_SUCCESS;
-    else {
-      istatus = mrb_fixnum(status);
-    }
-  } else {
-    istatus = EXIT_SUCCESS;
-  }
-
-  exit(istatus);
-}
-
-mrb_value
-mrb_f_exit_bang(mrb_state *mrb, mrb_value klass)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_f_exit_common(mrb_state *mrb, int bang)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-mrb_value
-mrb_f_pid(mrb_state *mrb, mrb_value klass)
-{
-  //TODO windows spec?
-  return mrb_fixnum_value((mrb_int)getpid());
-}
-
-mrb_value
-mrb_f_ppid(mrb_state *mrb, mrb_value klass)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_new(mrb_state *mrb, mrb_int pid, mrb_int status)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_coredump(mrb_state *mrb, mrb_value self)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_exitstatus(mrb_state *mrb, mrb_value self)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_exited(mrb_state *mrb, mrb_value self)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_signaled(mrb_state *mrb, mrb_value self)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_stopped(mrb_state *mrb, mrb_value self)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_stopsig(mrb_state *mrb, mrb_value self)
-{
-  //TODO
-  return mrb_nil_value();
-}
-
-static mrb_value
-mrb_procstat_termsig(mrb_state *mrb, mrb_value self)
-{
-  //TODO
-  return mrb_nil_value();
+    return ptr;
 }
 
 #endif

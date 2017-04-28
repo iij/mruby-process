@@ -20,7 +20,7 @@
 # SOFTWARE.
 
 MRuby::Build.new do |conf|
-  toolchain :visualcpp
+  toolchain :gcc
 
   conf.enable_debug
   conf.enable_test

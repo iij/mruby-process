@@ -7,8 +7,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -18,3 +18,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#ifndef PROCESS_H
+#define PROCESS_H 1
+
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/types.h>
+
+#ifndef _WIN32
+# include <sys/wait.h>
+#endif
+
+#ifndef WNOHANG
+# define WNOHANG -1
+#endif
+
+#ifndef WUNTRACED
+# define WUNTRACED 0
+#endif
+
+#ifndef SIGINT
+# define SIGINT 2
+#endif
+
+#ifndef SIGKILL
+# define SIGKILL 9
+#endif
+
+extern void _exit(int status);
+extern void exit(int status);
+
+extern pid_t getpid(void);
+extern pid_t getppid(void);
+extern pid_t waitpid(pid_t pid, int *stat_loc, int options);
+
+extern int kill(pid_t pid, int sig);
+
+#endif /* PROCESS_H */

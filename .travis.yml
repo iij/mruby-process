@@ -30,3 +30,4 @@ env:
 
 script:
 - rake compile
+- rake test

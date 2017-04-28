@@ -56,6 +56,6 @@ init:
 build_script:
 - rake compile
 
-# test_script:
-# - rake test
+test_script:
+- rake test
 

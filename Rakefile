@@ -27,7 +27,7 @@ def mtask(cmd)
       sh "set MRUBY_CONFIG=#{MRUBY_CONFIG} && ruby .\\minirake #{cmd}"
     end
   else
-    sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ./minirake #{cmd}"
+    sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby ./minirake #{cmd}"
   end
 end
 
@@ -42,7 +42,7 @@ end
 
 desc 'compile binary'
 task compile: :mruby do
-  mtask 'all --verbose'
+  mtask 'all'
 end
 
 desc 'test'

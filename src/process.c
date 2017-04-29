@@ -394,3 +394,8 @@ void
 mrb_mruby_process_gem_final(mrb_state *mrb)
 {
 }
+
+void
+mrb_mruby_process_gem_final(mrb_state *mrb)
+{
+}

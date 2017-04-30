@@ -52,5 +52,10 @@ end
 
 desc 'cleanup'
 task :clean do
+  mtask 'clean'
+end
+
+desc 'deep cleanup'
+task :cleanall do
   mtask 'deep_clean'
 end

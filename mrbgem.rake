@@ -22,6 +22,9 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.license = 'MIT'
   spec.authors = 'mruby developers'
 
+  spec.add_test_dependency 'mruby-print', core: 'mruby-print'
+  spec.add_test_dependency 'mruby-env',   mgem: 'mruby-env'
+
   def target_win32?
     return true if ENV['OS'] == 'Windows_NT'
     build.is_a?(MRuby::CrossBuild) && build.host_target.include?('mingw')

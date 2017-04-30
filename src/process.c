@@ -191,6 +191,31 @@ mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
   return mrb_fixnum_value(pid);
 }
 
+static mrb_value
+mrb_f_fork(mrb_state *mrb, mrb_value klass)
+{
+  mrb_value b, result;
+  int pid;
+
+  mrb_get_args(mrb, "&", &b);
+
+  switch (pid = fork()) {
+  case 0:
+    if (!mrb_nil_p(b)) {
+      mrb_yield(mrb, b, result);
+      _exit(0);
+    }
+    return mrb_nil_value();
+
+  case -1:
+    mrb_sys_fail(mrb, "fork failed");
+    return mrb_nil_value();
+
+  default:
+    return mrb_fixnum_value(pid);
+  }
+}
+
 void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
@@ -198,7 +223,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
 
   mrb_define_method(mrb, mrb->kernel_module, "exit",   mrb_f_exit,   MRB_ARGS_OPT(1));
   mrb_define_method(mrb, mrb->kernel_module, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
-  // mrb_define_method(mrb, mrb->kernel_module, "fork",   mrb_f_fork,   MRB_ARGS_NONE());
+  mrb_define_method(mrb, mrb->kernel_module, "fork",   mrb_f_fork,   MRB_ARGS_NONE());
   // mrb_define_method(mrb, mrb->kernel_module, "sleep",  mrb_f_sleep,  MRB_ARGS_ANY());
   // mrb_define_method(mrb, mrb->kernel_module, "system", mrb_f_system, MRB_ARGS_ANY());
 
@@ -208,7 +233,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
 
   p = mrb_define_module(mrb, "Process");
   mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_ANY());
-  // mrb_define_class_method(mrb, p, "fork",    mrb_f_fork,    MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, p, "fork",    mrb_f_fork,    MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "waitpid", mrb_f_waitpid, MRB_ARGS_ANY());
   mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());

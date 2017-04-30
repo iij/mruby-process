@@ -38,6 +38,12 @@ static struct ChildRecord {
 static FARPROC get_proc_address(const char *module, const char *func, HANDLE *mh);
 static struct ChildRecord *FindChildSlot(pid_t pid);
 
+pid_t
+fork(void)
+{
+  return -1;
+}
+
 /* License: Ruby's */
 pid_t
 getpid(void)

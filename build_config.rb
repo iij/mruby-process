@@ -24,6 +24,5 @@ MRuby::Build.new do |conf|
   conf.enable_debug
   conf.enable_test
 
-  conf.gem core: 'mruby-print'
   conf.gem File.expand_path(File.dirname(__FILE__))
 end

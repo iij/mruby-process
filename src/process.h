@@ -49,6 +49,7 @@
 extern void _exit(int status);
 extern void exit(int status);
 
+extern pid_t fork(void);
 extern pid_t getpid(void);
 extern pid_t getppid(void);
 extern pid_t waitpid(pid_t pid, int *stat_loc, int options);

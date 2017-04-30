@@ -74,6 +74,6 @@ assert('Process.fork') do
     assert_equal(pid, p)
     # assert_true(s.signaled?)
   else
-    assert_raise { fork {} }
+    assert_raise(RuntimeError) { fork }
   end
 end

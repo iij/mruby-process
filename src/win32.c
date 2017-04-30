@@ -19,8 +19,6 @@
  * SOFTWARE.
  */
 
-#ifdef _WIN32
-
 #include "process.h"
 
 #include <windows.h>
@@ -217,5 +215,3 @@ get_proc_address(const char *module, const char *func, HANDLE *mh)
     }
     return ptr;
 }
-
-#endif

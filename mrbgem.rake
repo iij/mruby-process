@@ -21,4 +21,11 @@
 MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.license = 'MIT'
   spec.authors = 'mruby developers'
+
+  def target_win32?
+    return true if ENV['OS'] == 'Windows_NT'
+    build.is_a?(MRuby::CrossBuild) && build.host_target.include?('mingw')
+  end
+
+  spec.objs.delete objfile("#{build_dir}/src/win32") unless target_win32?
 end

@@ -240,13 +240,14 @@ mrb_process_set_pid_gv(mrb_state *mrb)
 void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
-  struct RClass *p, *ps, *s;
+  struct RClass *p, *ps, *s, *k;
+  struct RClass *kernel;
 
-  mrb_define_method(mrb, mrb->kernel_module, "exit",   mrb_f_exit,   MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, mrb->kernel_module, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, mrb->kernel_module, "fork",   mrb_f_fork,   MRB_ARGS_NONE());
-  // mrb_define_method(mrb, mrb->kernel_module, "sleep",  mrb_f_sleep,  MRB_ARGS_ANY());
-  // mrb_define_method(mrb, mrb->kernel_module, "system", mrb_f_system, MRB_ARGS_ANY());
+  k = mrb->kernel_module;
+  mrb_define_method(mrb, k, "exit",   mrb_f_exit,      MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, k, "exit!",  mrb_f_exit_bang, MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, k, "fork",   mrb_f_fork,      MRB_ARGS_NONE());
+  // mrb_define_method(mrb, k, "system", mrb_f_system,    MRB_ARGS_ANY());
 
   s = mrb_define_module(mrb, "Signal");
   mrb_define_class_method(mrb, s, "signame", mrb_sig_signame, MRB_ARGS_ANY());

@@ -39,6 +39,14 @@ assert('$$') do
   assert_equal Process.pid, $$
 end
 
+assert('$PID') do
+  assert_equal Process.pid, $PID
+end
+
+assert('$PROCESS_ID') do
+  assert_equal Process.pid, $PROCESS_ID
+end
+
 assert('Process.ppid') do
   assert_kind_of Integer, Process.pid
   assert_true Process.pid > 0

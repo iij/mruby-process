@@ -216,6 +216,16 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
   }
 }
 
+static void
+mrb_process_set_pid_gv(mrb_state *mrb)
+{
+  mrb_value pid = mrb_fixnum_value((mrb_int)getpid());
+
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"), pid);
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$PID"), pid);
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$PROCESS_ID"), pid);
+}
+
 void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
@@ -250,8 +260,8 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_const(mrb, p, "WNOHANG", mrb_fixnum_value(WNOHANG));
   mrb_define_const(mrb, p, "WUNTRACED", mrb_fixnum_value(WUNTRACED));
 
-  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_nil_value());
+  mrb_process_set_pid_gv(mrb);
 }
 
 void

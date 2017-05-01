@@ -241,7 +241,6 @@ void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
   struct RClass *p, *ps, *s, *k;
-  struct RClass *kernel;
 
   k = mrb->kernel_module;
   mrb_define_method(mrb, k, "exit",   mrb_f_exit,      MRB_ARGS_OPT(1));
@@ -250,7 +249,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   // mrb_define_method(mrb, k, "system", mrb_f_system,    MRB_ARGS_ANY());
 
   s = mrb_define_module(mrb, "Signal");
-  mrb_define_class_method(mrb, s, "signame", mrb_sig_signame, MRB_ARGS_ANY());
+  mrb_define_class_method(mrb, s, "signame", mrb_sig_signame, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, s, "list",    mrb_sig_list,    MRB_ARGS_NONE());
 
   p = mrb_define_module(mrb, "Process");

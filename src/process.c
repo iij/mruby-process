@@ -253,7 +253,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, s, "list",    mrb_sig_list,    MRB_ARGS_NONE());
 
   p = mrb_define_module(mrb, "Process");
-  mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_ANY());
+  mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_REQ(2)|MRB_ARGS_REST());
   mrb_define_class_method(mrb, p, "fork",    mrb_f_fork,    MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "waitpid", mrb_f_waitpid, MRB_ARGS_ANY());
   mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());

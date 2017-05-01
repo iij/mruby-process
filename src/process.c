@@ -91,7 +91,7 @@ mrb_f_ppid(mrb_state *mrb, mrb_value klass)
   return mrb_fixnum_value((mrb_int)getppid());
 }
 
-mrb_value
+static mrb_value
 mrb_f_kill(mrb_state *mrb, mrb_value klass)
 {
   mrb_int pid, argc;
@@ -156,23 +156,6 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
   return mrb_fixnum_value(sent);
 }
 
-static int
-mrb_waitpid(int pid, int flags, int *st)
-{
-  int result;
-
-retry:
-  result = waitpid(pid, st, flags);
-  if (result < 0) {
-    if (errno == EINTR) {
-      goto retry;
-    }
-    return -1;
-  }
-
-  return result;
-}
-
 static mrb_value
 mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
 {
@@ -191,6 +174,23 @@ mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
 
   // mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_procstat_new(mrb, pid, status));
   return mrb_fixnum_value(pid);
+}
+
+static int
+mrb_waitpid(int pid, int flags, int *st)
+{
+  int result;
+
+retry:
+  result = waitpid(pid, st, flags);
+  if (result < 0) {
+    if (errno == EINTR) {
+      goto retry;
+    }
+    return -1;
+  }
+
+  return result;
 }
 
 static mrb_value

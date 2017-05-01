@@ -29,6 +29,8 @@
 #include "process.h"
 
 static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
+static int mrb_waitpid(int pid, int flags, int *st);
+static void mrb_process_set_pid_gv(mrb_state *mrb);
 
 mrb_value
 mrb_f_exit(mrb_state *mrb, mrb_value klass)
@@ -201,6 +203,7 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
 
   switch (pid = fork()) {
   case 0:
+    mrb_process_set_pid_gv(mrb);
     if (!mrb_nil_p(b)) {
       mrb_yield(mrb, b, result);
       _exit(0);

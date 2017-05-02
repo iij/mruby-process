@@ -33,6 +33,21 @@ static void mrb_process_set_childstat_gv(mrb_state *mrb, mrb_value childstat);
 static void mrb_process_set_pid_gv(mrb_state *mrb);
 
 mrb_value
+mrb_f_abort(mrb_state *mrb, mrb_value klass)
+{
+  mrb_value error;
+  int n;
+
+  n = mrb_get_args(mrb, "|S", &error);
+
+  if (n != 0) {
+    fprintf(stderr, "%s\n", mrb_str_to_cstr(mrb, error));
+  }
+
+  return mrb_f_exit_common(mrb, 1);
+}
+
+mrb_value
 mrb_f_exit(mrb_state *mrb, mrb_value klass)
 {
   return mrb_f_exit_common(mrb, 0);
@@ -259,12 +274,14 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_mruby_process_gem_signal_init(mrb);
 
   k = mrb->kernel_module;
+  mrb_define_method(mrb, k, "abort", mrb_f_abort,  MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit",  mrb_f_exit,   MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "fork",  mrb_f_fork,   MRB_ARGS_BLOCK());
   mrb_define_method(mrb, k, "exec",  mrb_f_exec,   MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
   p = mrb_define_module(mrb, "Process");
+  mrb_define_class_method(mrb, p, "abort",   mrb_f_abort,   MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, p, "exit",    mrb_f_exit,    MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, p, "exit!",   mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_REQ(2)|MRB_ARGS_REST());

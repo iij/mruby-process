@@ -183,9 +183,9 @@ static const struct signals {
     {NULL, 0}
 };
 
-static const char signame_prefix[3] = "SIG";
+const char signame_prefix[3] = "SIG";
 
-static int
+int
 signm2signo(const char *nm)
 {
     const struct signals *sigs;
@@ -198,7 +198,7 @@ signm2signo(const char *nm)
     return 0;
 }
 
-static const char*
+const char*
 signo2signm(int no)
 {
     const struct signals *sigs;
@@ -261,4 +261,14 @@ mrb_sig_list(mrb_state *mrb, mrb_value klass)
     }
 
     return h;
+}
+
+void
+mrb_mruby_process_gem_signal_init(mrb_state *mrb)
+{
+    struct RClass *s;
+
+    s = mrb_define_module(mrb, "Signal");
+    mrb_define_class_method(mrb, s, "signame", mrb_sig_signame, MRB_ARGS_REQ(1));
+    mrb_define_class_method(mrb, s, "list",    mrb_sig_list,    MRB_ARGS_NONE());
 }

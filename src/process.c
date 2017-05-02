@@ -254,17 +254,15 @@ mrb_process_set_pid_gv(mrb_state *mrb)
 void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
-  struct RClass *p, *ps, *s, *k;
+  struct RClass *p, *ps, *k;
+
+  mrb_mruby_process_gem_signal_init(mrb);
 
   k = mrb->kernel_module;
   mrb_define_method(mrb, k, "exit",   mrb_f_exit,      MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit!",  mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "fork",   mrb_f_fork,      MRB_ARGS_BLOCK());
   mrb_define_method(mrb, k, "exec",   mrb_f_exec,      MRB_ARGS_REQ(1)|MRB_ARGS_REST());
-
-  s = mrb_define_module(mrb, "Signal");
-  mrb_define_class_method(mrb, s, "signame", mrb_sig_signame, MRB_ARGS_REQ(1));
-  mrb_define_class_method(mrb, s, "list",    mrb_sig_list,    MRB_ARGS_NONE());
 
   p = mrb_define_module(mrb, "Process");
   mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_REQ(2)|MRB_ARGS_REST());

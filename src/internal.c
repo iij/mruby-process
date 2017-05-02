@@ -70,9 +70,10 @@ mrb_execarg_new(mrb_state *mrb)
 static void
 mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp)
 {
-  int ai = mrb_gc_arena_save(mrb);
+  int ai;
   char **result;
 
+  ai     = mrb_gc_arena_save(mrb);
   result = (char **)mrb_malloc(mrb, sizeof(char *) * 4);
 
   // TODO: cross platform
@@ -121,13 +122,12 @@ static char*
 mrb_execarg_argv_to_cstr(mrb_state *mrb, mrb_value *argv, mrb_int len)
 {
   mrb_value str;
-  int i;
+  int i, ai;
 
   if (len < 1)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "must have at least 1 argument");
 
-  int ai = mrb_gc_arena_save(mrb);
-
+  ai  = mrb_gc_arena_save(mrb);
   str = mrb_str_new(mrb, "", 0);
 
   for (i = 0; i < len; i++) {

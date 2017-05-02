@@ -18,6 +18,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+def wait_for_pid(pid)
+  loop do
+    p = Process.waitpid(pid, Process::WNOHANG)
+    break if p
+  end
+end
+
+def assert_posix(str, &block)
+  assert(str, &block) if OS.posix?
+end
+
+alias assert_not_windows assert_posix
+
+def assert_windows(str, &block)
+  assert(str, &block) if OS.windows?
+end
+
 assert('Process') do
   assert_kind_of Module, Process
 end
@@ -52,7 +69,7 @@ assert('Process.ppid') do
   assert_true Process.pid > 0
 end
 
-assert('Process.exec') do
+assert_not_windows('Process.exec') do
   var = Time.now.to_i.to_s
 
   assert_raise(ArgumentError) { exec }
@@ -60,10 +77,7 @@ assert('Process.exec') do
 
   pid = fork { exec({ MYVAR: var }, 'echo $MYVAR > ../tmp/exec.txt') }
 
-  loop do
-    p = Process.waitpid(pid, Process::WNOHANG)
-    break if p
-  end
+  wait_for_pid(pid)
 
   File.open('../tmp/exec.txt') do |f|
     assert_equal var, f.read.chomp
@@ -81,25 +95,25 @@ assert('Process.kill') do
   assert_raise(ArgumentError) { Process.kill(:UNKNOWN, Process.pid) }
 end
 
-assert('Process.fork') do
-  if ENV['OS'] != 'Windows_NT'
-    pid  = fork { loop {} }
+assert_not_windows('Process.fork') do
+  pid  = fork { loop {} }
+  p, s = Process.waitpid(pid, Process::WNOHANG)
+
+  assert_nil(p)
+  assert_nil(s)
+
+  Process.kill :TERM, pid
+
+  loop do
+    # wait until the process completely killed with non-block mode
     p, s = Process.waitpid(pid, Process::WNOHANG)
-
-    assert_nil(p)
-    assert_nil(s)
-
-    Process.kill :TERM, pid
-
-    loop do
-      # wait until the process completely killed with non-block mode
-      p, s = Process.waitpid(pid, Process::WNOHANG)
-      break if p
-    end
-
-    assert_equal(pid, p)
-    # assert_true(s.signaled?)
-  else
-    assert_raise(RuntimeError) { fork }
+    break if p
   end
+
+  assert_equal(pid, p)
+  # assert_true(s.signaled?)
+end
+
+assert_windows('Process.fork') do
+  assert_raise(RuntimeError) { fork }
 end

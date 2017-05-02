@@ -179,18 +179,6 @@ kill(pid_t pid, int sig)
   return ret;
 }
 
-// int
-// execv(const char *path, char *const argv[])
-// {
-//   return 1;
-// }
-
-// int
-// execve(const char *filename, char *const argv[], char *const envp[])
-// {
-//   return _execve(filename, (const char *const *)argv, (const char * const *)envp);
-// }
-
 /* License: Ruby's */
 static struct ChildRecord *
 FindChildSlot(pid_t pid)

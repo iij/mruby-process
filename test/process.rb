@@ -85,3 +85,7 @@ assert('Process.fork') do
     assert_raise(RuntimeError) { fork }
   end
 end
+
+assert('Process.system') do
+  assert_nothing_raised { system({ MYVAR: '42' }, 'echo $MYVAR', '*') }
+end

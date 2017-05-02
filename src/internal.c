@@ -34,6 +34,7 @@ typedef struct mrb_execarg {
   char **argv;
 } mrb_execarg;
 
+static int mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **result);
 static char* mrb_execarg_argv_to_cstr(mrb_state *mrb, mrb_value *argv, mrb_int len);
 static void mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp);
 
@@ -72,15 +73,29 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
 {
   int ai;
   char **result;
+  char *cmd;
 
-  ai     = mrb_gc_arena_save(mrb);
-  result = (char **)mrb_malloc(mrb, sizeof(char *) * 4);
+  ai  = mrb_gc_arena_save(mrb);
+  cmd = mrb_execarg_argv_to_cstr(mrb, argv, argc);
 
-  // TODO: cross platform
-  result[0] = strdup("/bin/sh");
-  result[1] = strdup("-c");
-  result[2] = mrb_execarg_argv_to_cstr(mrb, argv, argc);
-  result[3] = NULL;
+  if (cmd[0] == '/' || cmd[1] == ':') {
+    result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
+    mrb_execarg_argv_to_strv(mrb, argv, argc, result);
+    result[argc] = NULL;
+  }
+  else {
+    result = (char **)mrb_malloc(mrb, sizeof(char *) * 4);
+
+#ifdef _WIN32
+    result[0] = strdup("C:\\WINDOWS\\system32\\cmd.exe");
+    result[1] = strdup("/c");
+#else
+    result[0] = strdup("/bin/sh");
+    result[1] = strdup("-c");
+#endif
+    result[2] = cmd;
+    result[3] = NULL;
+  }
 
   eargp->envp     = NULL;
   eargp->filename = result[0];
@@ -116,6 +131,32 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
   }
 
   mrb_gc_arena_restore(mrb, ai);
+}
+
+static int
+mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **result)
+{
+  char *buf;
+  int i;
+
+  if (len < 1)
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "must have at least 1 argument");
+
+  int ai = mrb_gc_arena_save(mrb);
+
+  for (i = 0; i < len; i++) {
+    buf = (char *)mrb_string_value_cstr(mrb, &argv[i]);
+
+    *result = buf;
+    result++;
+  }
+
+  *result = NULL;
+  result -= i;
+
+  mrb_gc_arena_restore(mrb, ai);
+
+  return 0;
 }
 
 static char*

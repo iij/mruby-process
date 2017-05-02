@@ -70,12 +70,20 @@ assert('Process.ppid') do
 end
 
 assert_not_windows('Process.exec') do
-  var = Time.now.to_i.to_s
-
   assert_raise(ArgumentError) { exec }
-  assert_raise(TypeError) { exec(123) }
+  assert_raise(TypeError) { exec 123 }
 
+  var = Time.now.to_i.to_s
   pid = fork { exec({ MYVAR: var }, 'echo $MYVAR > ../tmp/exec.txt') }
+
+  wait_for_pid(pid)
+
+  File.open('../tmp/exec.txt') do |f|
+    assert_equal var, f.read.chomp
+  end
+
+  var = "x#{var}"
+  pid = fork { exec '/bin/sh', '-c', "echo #{var} > ../tmp/exec.txt" }
 
   wait_for_pid(pid)
 

@@ -44,6 +44,8 @@ environment:
 matrix:
   allow_failures:
   - TOOLCHAIN: visualcpp
+  exclude:
+  - TOOLCHAIN: visualcpp
 
 init:
 - CALL "%VCVARSALL%" amd64

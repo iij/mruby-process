@@ -137,12 +137,12 @@ static int
 mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **result)
 {
   char *buf;
-  int i;
+  int i, ai;
 
   if (len < 1)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "must have at least 1 argument");
 
-  int ai = mrb_gc_arena_save(mrb);
+  ai = mrb_gc_arena_save(mrb);
 
   for (i = 0; i < len; i++) {
     buf = (char *)mrb_string_value_cstr(mrb, &argv[i]);

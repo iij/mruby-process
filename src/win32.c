@@ -38,17 +38,10 @@ static struct ChildRecord {
 static FARPROC get_proc_address(const char *module, const char *func, HANDLE *mh);
 static struct ChildRecord *FindChildSlot(pid_t pid);
 
-pid_t
+int
 fork(void)
 {
   return -1;
-}
-
-/* License: Ruby's */
-pid_t
-getpid(void)
-{
-  return GetCurrentProcessId();
 }
 
 /* License: Ruby's */
@@ -185,6 +178,18 @@ kill(pid_t pid, int sig)
 
   return ret;
 }
+
+// int
+// execv(const char *path, char *const argv[])
+// {
+//   return 1;
+// }
+
+// int
+// execve(const char *filename, char *const argv[], char *const envp[])
+// {
+//   return _execve(filename, (const char *const *)argv, (const char * const *)envp);
+// }
 
 /* License: Ruby's */
 static struct ChildRecord *

@@ -20,11 +20,8 @@
  */
 
 #include "mruby.h"
-#include "mruby/class.h"
 #include "mruby/variable.h"
 #include "mruby/error.h"
-
-#include <unistd.h>
 
 #include "process.h"
 #include "internal.c"

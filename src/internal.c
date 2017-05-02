@@ -23,67 +23,22 @@
 #include <string.h>
 
 #include "mruby.h"
+#include "mruby/class.h"
 #include "mruby/hash.h"
 #include "mruby/array.h"
 #include "mruby/string.h"
 
 typedef struct mrb_execarg {
-  union {
-    struct {
-      char *shell_script;
-    } sh;
-    struct {
-      char *command_name;
-      char *command_abspath;
-    } cmd;
-  } invoke;
-  unsigned use_shell : 1;
   char **envp;
+  char *filename;
   char **argv;
 } mrb_execarg;
 
-static int mrb_value_to_strv(mrb_state *mrb, mrb_value *array, mrb_int len, char **result);
-static void mrb_process_set_childstat_gv(mrb_state *mrb, mrb_value childstat);
-static void mrb_process_set_pid_gv(mrb_state *mrb);
-static struct mrb_execarg* mrb_execarg_new(mrb_state *mrb, int accept_shell);
-static void mrb_exec_fillarg(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp);
+static char* mrb_execarg_argv_to_cstr(mrb_state *mrb, mrb_value *argv, mrb_int len);
+static void mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp);
 
-static int
-mrb_value_to_strv(mrb_state *mrb, mrb_value *array, mrb_int len, char **result)
-{
-  mrb_value strv;
-  char *buf;
-  int i;
-
-  if (len < 1)
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "must have at least 1 argument");
-
-  int ai = mrb_gc_arena_save(mrb);
-
-  for (i = 0; i < len; i++) {
-    strv = mrb_convert_type(mrb, array[i], MRB_TT_STRING, "String", "to_str");
-    buf  = (char *)mrb_string_value_cstr(mrb, &strv);
-
-    *result = buf;
-    result++;
-  }
-
-  *result = NULL;
-  result -= i;
-
-  mrb_gc_arena_restore(mrb, ai);
-
-  return 0;
-}
-
-static size_t
-memsize_exec_arg(void)
-{
-  return sizeof(struct mrb_execarg);
-}
-
-static struct mrb_execarg*
-mrb_execarg_new(mrb_state *mrb, int accept_shell)
+struct mrb_execarg*
+mrb_execarg_new(mrb_state *mrb)
 {
   mrb_int argc;
   mrb_value *argv, env;
@@ -91,26 +46,44 @@ mrb_execarg_new(mrb_state *mrb, int accept_shell)
 
   mrb_get_args(mrb, "o|*", &env, &argv, &argc);
 
-  if (mrb_hash_p(env))
-    mrb_get_args(mrb, "H|*", &env, &argv, &argc);
-  else
-    mrb_get_args(mrb, "*", &argv, &argc);
+  switch (mrb_type(env)) {
+    case MRB_TT_HASH:
+      mrb_get_args(mrb, "H|*", &env, &argv, &argc);
+      break;
 
-  eargp = malloc(memsize_exec_arg());
-  eargp->use_shell = accept_shell;
-  mrb_exec_fillarg(mrb, env, argv, argc, eargp);
+    case MRB_TT_STRING:
+      mrb_get_args(mrb, "*", &argv, &argc);
+      env = mrb_nil_value();
+      break;
+
+    default:
+      mrb_raisef(mrb, E_TYPE_ERROR, "no implicit conversion of %S into String",
+                 mrb_obj_value(mrb_class(mrb, env)));
+  }
+
+  eargp = malloc(sizeof(struct mrb_execarg));
+  mrb_execarg_fill(mrb, env, argv, argc, eargp);
 
   return eargp;
 }
 
 static void
-mrb_exec_fillarg(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp)
+mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp)
 {
   int ai = mrb_gc_arena_save(mrb);
   char **result;
 
-  result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
-  mrb_value_to_strv(mrb, argv, argc, result);
+  result = (char **)mrb_malloc(mrb, sizeof(char *) * 4);
+
+  // TODO: cross platform
+  result[0] = strdup("/bin/sh");
+  result[1] = strdup("-c");
+  result[2] = mrb_execarg_argv_to_cstr(mrb, argv, argc);
+  result[3] = NULL;
+
+  eargp->envp     = NULL;
+  eargp->filename = result[0];
+  eargp->argv     = result;
 
   if (mrb_test(env)) {
     mrb_int len;
@@ -141,13 +114,29 @@ mrb_exec_fillarg(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
     eargp->envp = envp;
   }
 
-  eargp->use_shell = argc == 0;
-  eargp->argv      = result;
+  mrb_gc_arena_restore(mrb, ai);
+}
 
-  if (eargp->use_shell)
-    eargp->invoke.sh.shell_script  = result[0];
-  else
-    eargp->invoke.cmd.command_name = result[0];
+static char*
+mrb_execarg_argv_to_cstr(mrb_state *mrb, mrb_value *argv, mrb_int len)
+{
+  mrb_value str;
+  int i;
+
+  if (len < 1)
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "must have at least 1 argument");
+
+  int ai = mrb_gc_arena_save(mrb);
+
+  str = mrb_str_new(mrb, "", 0);
+
+  for (i = 0; i < len; i++) {
+    if (i > 0)
+      mrb_str_concat(mrb, str, mrb_str_new(mrb, " ", 1));
+    mrb_str_concat(mrb, str, argv[i]);
+  }
 
   mrb_gc_arena_restore(mrb, ai);
+
+  return RSTRING_PTR(str);
 }

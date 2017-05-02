@@ -52,6 +52,24 @@ assert('Process.ppid') do
   assert_true Process.pid > 0
 end
 
+assert('Process.exec') do
+  var = Time.now.to_i.to_s
+
+  assert_raise(ArgumentError) { exec }
+  assert_raise(TypeError) { exec(123) }
+
+  pid = fork { exec({ MYVAR: var }, 'echo $MYVAR > ../tmp/exec.txt') }
+
+  loop do
+    p = Process.waitpid(pid, Process::WNOHANG)
+    break if p
+  end
+
+  File.open('../tmp/exec.txt') do |f|
+    assert_equal var, f.read.chomp
+  end
+end
+
 assert('Process.kill') do
   assert_nothing_raised { Process.kill(:EXIT, Process.pid) }
   assert_nothing_raised { Process.kill('EXIT', Process.pid) }
@@ -84,8 +102,4 @@ assert('Process.fork') do
   else
     assert_raise(RuntimeError) { fork }
   end
-end
-
-assert('Process.system') do
-  assert_nothing_raised { system({ MYVAR: '42' }, 'echo $MYVAR', '*') }
 end

@@ -24,12 +24,16 @@
 #include "mruby/variable.h"
 #include "mruby/error.h"
 
+#include <unistd.h>
+
 #include "process.h"
 #include "internal.c"
 #include "signal.c"
 
 static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
 static int mrb_waitpid(int pid, int flags, int *st);
+static void mrb_process_set_childstat_gv(mrb_state *mrb, mrb_value childstat);
+static void mrb_process_set_pid_gv(mrb_state *mrb);
 
 mrb_value
 mrb_f_exit(mrb_state *mrb, mrb_value klass)
@@ -219,32 +223,18 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
 }
 
 static mrb_value
-mrb_f_system(mrb_state *mrb, mrb_value klass)
+mrb_f_exec(mrb_state *mrb, mrb_value klass)
 {
-  // int ret;
-  // mrb_value *argv, pname;
-  // mrb_value envs, cmd, opts;
-  // const char *path;
-  // mrb_int argc;
-  // void (*chfunc)(int);
+  struct mrb_execarg *eargp = mrb_execarg_new(mrb);
 
-  // fflush(stdout);
-  // fflush(stderr);
+  if (eargp->envp)
+    execve(eargp->filename, eargp->argv, eargp->envp);
+  else
+    execv(eargp->filename, eargp->argv);
 
-  mrb_execarg_new(mrb, TRUE);
+  mrb_sys_fail(mrb, "exec failed");
 
-  // pname = argv[0];
-  // path = mrb_string_value_cstr(mrb, &pname);
-
-  // chfunc = signal(SIGCHLD, SIG_DFL);
-  // ret = system(path);
-  // signal(SIGCHLD, chfunc);
-
-  // if (WIFEXITED(ret) && WEXITSTATUS(ret) == 0) {
-  //   return mrb_true_value();
-  // }
-
-  return mrb_false_value();
+  return mrb_nil_value();
 }
 
 static void
@@ -273,7 +263,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, k, "exit",   mrb_f_exit,      MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit!",  mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "fork",   mrb_f_fork,      MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, k, "system", mrb_f_system,    MRB_ARGS_ARG(1,1));
+  mrb_define_method(mrb, k, "exec",   mrb_f_exec,      MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
   s = mrb_define_module(mrb, "Signal");
   mrb_define_class_method(mrb, s, "signame", mrb_sig_signame, MRB_ARGS_REQ(1));

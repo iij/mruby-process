@@ -47,6 +47,7 @@ end
 
 desc 'test'
 task test: :mruby do
+  mkdir_p 'tmp'
   mtask 'test'
 end
 

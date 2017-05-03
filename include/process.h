@@ -22,6 +22,8 @@
 #ifndef MRB_PROCESS_H
 #define MRB_PROCESS_H 1
 
+#include "mruby.h"
+
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -45,6 +47,33 @@
 #ifndef SIGKILL
 # define SIGKILL 9
 #endif
+
+#ifndef WIFEXITED
+# define WIFEXITED(w)    (((w) & 0xff) == 0)
+#endif
+
+#ifndef WIFSIGNALED
+# define WIFSIGNALED(w)  (((w) & 0x7f) > 0 && (((w) & 0x7f) < 0x7f))
+#endif
+
+#ifndef WIFSTOPPED
+# define WIFSTOPPED(w)   (((w) & 0xff) == 0x7f)
+#endif
+
+#ifndef WEXITSTATUS
+# define WEXITSTATUS(w)  (((w) >> 8) & 0xff)
+#endif
+
+#ifndef WTERMSIG
+# define WTERMSIG(w)     ((w) & 0x7f)
+#endif
+
+#ifndef WSTOPSIG
+# define WSTOPSIG        WEXITSTATUS
+#endif
+
+extern mrb_value mrb_last_status_get(mrb_state *mrb);
+extern void mrb_last_status_set(mrb_state *mrb, pid_t pid, mrb_int status);
 
 extern void _exit(int status);
 extern void exit(int status);

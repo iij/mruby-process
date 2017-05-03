@@ -24,10 +24,12 @@
 
 #include "mruby.h"
 
-#include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <process.h>
+
+#ifndef _WIN32
+# include <sys/wait.h>
+#endif
 
 #ifndef WNOHANG
 # define WNOHANG -1

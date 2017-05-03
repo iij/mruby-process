@@ -72,19 +72,19 @@
 # define WSTOPSIG        WEXITSTATUS
 #endif
 
-extern mrb_value mrb_last_status_get(mrb_state *mrb);
-extern void mrb_last_status_set(mrb_state *mrb, pid_t pid, mrb_int status);
+mrb_value mrb_last_status_get(mrb_state *mrb);
+void mrb_last_status_set(mrb_state *mrb, pid_t pid, mrb_int status);
 
-extern void _exit(int status);
-extern void exit(int status);
+void _exit(int status);
+void exit(int status);
 
-extern int   getpid(void);
-extern pid_t getppid(void);
-extern pid_t waitpid(pid_t pid, int *stat_loc, int options);
+int   getpid(void);
+pid_t getppid(void);
+pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
-extern int fork(void);
-extern int execv(const char *path, char *const argv[]);
-extern int execve(const char *filename, char *const argv[], char *const envp[]);
-extern int kill(pid_t pid, int sig);
+int fork(void);
+int execv(const char *path, char *const argv[]);
+int execve(const char *filename, char *const argv[], char *const envp[]);
+int kill(pid_t pid, int sig);
 
 #endif /* MRB_PROCESS_H */

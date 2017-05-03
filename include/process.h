@@ -27,10 +27,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
-
-#ifdef _WIN32
-# include <process.h>
-#endif
+#include <process.h>
 
 #ifndef WNOHANG
 # define WNOHANG -1

@@ -19,8 +19,8 @@
  * SOFTWARE.
  */
 
-#ifndef PROCESS_H
-#define PROCESS_H 1
+#ifndef MRB_PROCESS_H
+#define MRB_PROCESS_H 1
 
 #include <stdlib.h>
 #include <signal.h>
@@ -49,7 +49,7 @@
 extern void _exit(int status);
 extern void exit(int status);
 
-extern int getpid(void);
+extern int   getpid(void);
 extern pid_t getppid(void);
 extern pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
@@ -58,4 +58,4 @@ extern int execv(const char *path, char *const argv[]);
 extern int execve(const char *filename, char *const argv[], char *const envp[]);
 extern int kill(pid_t pid, int sig);
 
-#endif /* PROCESS_H */
+#endif /* MRB_PROCESS_H */

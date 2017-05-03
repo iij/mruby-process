@@ -32,5 +32,6 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
     build.is_a?(MRuby::CrossBuild) && build.host_target.include?('mingw')
   end
 
+  spec.cc.defines << 'HAVE_MRB_PROCESS_H'
   spec.objs.delete objfile("#{build_dir}/src/win32") unless target_win32?
 end

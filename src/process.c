@@ -211,7 +211,10 @@ mrb_f_wait(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_f_wait2(mrb_state *mrb, mrb_value klass)
 {
-  return mrb_assoc_new(mrb, mrb_f_wait(mrb, klass), mrb_last_status_get(mrb));
+  mrb_value pid = mrb_f_wait(mrb, klass);
+  mrb_value st  = mrb_last_status_get(mrb);
+
+  return mrb_assoc_new(mrb, pid, st);
 }
 
 static int

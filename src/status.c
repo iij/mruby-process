@@ -44,8 +44,8 @@ mrb_pst_last_status_get(mrb_state *mrb, mrb_value self)
 static void
 mrb_pst_last_status_set(mrb_state *mrb, mrb_value pst)
 {
-  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), pst);
-  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$CHILD_STATUS"), pst);
+    mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), pst);
+    mrb_gv_set(mrb, mrb_intern_lit(mrb, "$CHILD_STATUS"), pst);
 }
 
 void

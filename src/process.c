@@ -249,6 +249,28 @@ mrb_f_exec(mrb_state *mrb, mrb_value klass)
   return mrb_nil_value();
 }
 
+static mrb_value
+mrb_f_spawn(mrb_state *mrb, mrb_value klass)
+{
+  struct mrb_execarg *eargp = mrb_execarg_new(mrb);
+
+  pid_t pid;
+  int status;
+  status = posix_spawn(&pid, eargp->filename, NULL, NULL, eargp->argv, eargp->envp);
+  if (status == 0) {
+      printf("Child pid: %i\n", pid);
+      if (waitpid(pid, &status, 0) != -1) {
+          printf("Child exited with status %i\n", status);
+      } else {
+          perror("waitpid");
+      }
+  } else {
+      printf("posix_spawn: %s\n", strerror(status));
+  }
+
+  return mrb_nil_value();
+}
+
 static void
 mrb_process_set_childstat_gv(mrb_state *mrb, mrb_value childstat)
 {
@@ -287,6 +309,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_REQ(2)|MRB_ARGS_REST());
   mrb_define_class_method(mrb, p, "fork",    mrb_f_fork,    MRB_ARGS_BLOCK());
   mrb_define_class_method(mrb, p, "exec",    mrb_f_exec,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_class_method(mrb, p, "spawn",    mrb_f_spawn,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
   mrb_define_class_method(mrb, p, "waitpid", mrb_f_waitpid, MRB_ARGS_ARG(1,1));
   mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());

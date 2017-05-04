@@ -28,6 +28,9 @@
 
 #ifdef _WIN32
 # include <process.h>
+# include <pthread.h>
+#else
+# include <spawn.h>
 #endif
 
 #ifndef WNOHANG

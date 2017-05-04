@@ -104,6 +104,21 @@ waitpid(pid_t pid, int *stat_loc, int options)
 
 /* License: Ruby's */
 int
+todo_spawnv(char *filename, char **argv)
+{
+
+  return _spawnv(_P_NOWAIT,filename,argv);
+}
+
+
+int
+todo_spawnve(char *filename, char **argv, char **env)
+{
+  return _spawnve(_P_NOWAIT,filename,argv,env);
+}
+
+
+int
 kill(pid_t pid, int sig)
 {
   pid_t ret = 0;

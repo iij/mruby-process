@@ -45,6 +45,24 @@ assert('Process::WUNTRACED') do
   assert_kind_of Integer, Process::WUNTRACED
 end
 
+assert_not_windows('Process.argv0') do
+  assert_equal ENV['_'], Process.argv0
+end
+
+assert_windows('Process.argv0') do
+  assert_include Process.argv0, 'mrbtest.exe'
+end
+
+assert('$0') do
+  assert_raise(RuntimeError, 'Should be frozen') { $0.upcase! }
+  assert_not_include ['/', '\\'], $0
+end
+
+assert('$PROGRAM_NAME') do
+  assert_raise(RuntimeError, 'Should be frozen') { $PROGRAM_NAME.upcase! }
+  assert_equal $0, $PROGRAM_NAME
+end
+
 assert('Process.pid') do
   assert_kind_of Integer, Process.pid
   assert_true Process.pid > 0

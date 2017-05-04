@@ -19,6 +19,8 @@
  * SOFTWARE.
  */
 
+#include "mruby.h"
+#include "mruby/string.h"
 #include "process.h"
 
 #include <windows.h>
@@ -215,6 +217,34 @@ get_proc_address(const char *module, const char *func, HANDLE *mh)
     return ptr;
 }
 
+mrb_value
+mrb_argv0(mrb_state *mrb)
+{
+  TCHAR argv0[MAX_PATH + 1];
+
+  GetModuleFileName(NULL, argv0, MAX_PATH + 1);
+
+  return mrb_str_new_cstr(mrb, argv0);
+}
+
+mrb_value
+mrb_progname(mrb_state *mrb)
+{
+  TCHAR argv0[MAX_PATH + 1];
+  char *progname;
+
+  GetModuleFileName(NULL, argv0, MAX_PATH + 1);
+
+  progname = strrchr(argv0, '\\');
+
+  if (progname)
+    progname++;
+  else
+    progname = argv0;
+
+  return mrb_str_new_cstr(mrb, progname);
+}
+
 int
 spawnv(pid_t *pid, const char *path, char *const argv[])
 {
@@ -222,7 +252,7 @@ spawnv(pid_t *pid, const char *path, char *const argv[])
 }
 
 int
-spawnve(pid_t *pid, const char * path, char *const argv[], char *const envp[])
+spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[])
 {
   return 0; // TODO
 }

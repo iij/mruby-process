@@ -33,7 +33,19 @@ static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
 static int mrb_waitpid(int pid, int flags, int *st);
 static void mrb_process_set_pid_gv(mrb_state *mrb);
 
-mrb_value
+static mrb_value
+mrb_proc_argv0(mrb_state *mrb, mrb_value klass)
+{
+  return mrb_argv0(mrb);
+}
+
+static mrb_value
+mrb_proc_progname(mrb_state *mrb)
+{
+  return mrb_funcall(mrb, mrb_progname(mrb), "freeze", 0);
+}
+
+static mrb_value
 mrb_f_abort(mrb_state *mrb, mrb_value klass)
 {
   mrb_value error;
@@ -48,13 +60,13 @@ mrb_f_abort(mrb_state *mrb, mrb_value klass)
   return mrb_f_exit_common(mrb, 1);
 }
 
-mrb_value
+static mrb_value
 mrb_f_exit(mrb_state *mrb, mrb_value klass)
 {
   return mrb_f_exit_common(mrb, 0);
 }
 
-mrb_value
+static mrb_value
 mrb_f_exit_bang(mrb_state *mrb, mrb_value klass)
 {
   return mrb_f_exit_common(mrb, 1);
@@ -95,13 +107,13 @@ mrb_f_exit_common(mrb_state *mrb, int bang)
   return mrb_nil_value();
 }
 
-mrb_value
+static mrb_value
 mrb_f_pid(mrb_state *mrb, mrb_value klass)
 {
   return mrb_fixnum_value((mrb_int)getpid());
 }
 
-mrb_value
+static mrb_value
 mrb_f_ppid(mrb_state *mrb, mrb_value klass)
 {
   return mrb_fixnum_value((mrb_int)getppid());
@@ -275,6 +287,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, k, "exec",  mrb_f_exec,   MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
   p = mrb_define_module(mrb, "Process");
+  mrb_define_class_method(mrb, p, "argv0",   mrb_proc_argv0, MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "abort",   mrb_f_abort,   MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, p, "exit",    mrb_f_exit,    MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, p, "exit!",   mrb_f_exit_bang, MRB_ARGS_OPT(1));
@@ -288,10 +301,12 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_const(mrb, p, "WNOHANG",   mrb_fixnum_value(WNOHANG));
   mrb_define_const(mrb, p, "WUNTRACED", mrb_fixnum_value(WUNTRACED));
 
+  mrb_process_set_pid_gv(mrb);
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$0"),            mrb_proc_progname(mrb));
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$PROGRAM_NAME"), mrb_proc_progname(mrb));
+
   mrb_mruby_process_gem_signal_init(mrb);
   mrb_mruby_process_gem_procstat_init(mrb);
-
-  mrb_process_set_pid_gv(mrb);
 }
 
 void

@@ -20,12 +20,19 @@
 
 # Utility functions to create processes and to interact with them.
 module Process
-  # Waits for a child process to exit and returns an array containing the
-  # process id and the exit status of that child.
+  # Waits for the given child process to exit, returning that child's process id
+  # and exit status.
+  #
+  # @return [ Integer, Process::Status ]
   def self.waitpid2(pid, flags = 0)
     i = waitpid(pid, flags)
 
     return nil unless i
     [i, $?.dup]
+  end
+
+  class << self
+    alias wait waitpid
+    alias wait2 waitpid2
   end
 end

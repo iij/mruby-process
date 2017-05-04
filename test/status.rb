@@ -62,7 +62,7 @@ end
 assert_not_windows('Process::Status#>>') do
   fork_and_wait { exit 99 }
 
-  assert_equal 99, $?.to_i >> 8
+  assert_equal 99, $? >> 8
 end
 
 # assert('Process::Status#coredump?')

@@ -20,3 +20,6 @@
 
 Style/SpecialGlobalVars:
   Enabled: false
+
+Style/NumericPredicate:
+  EnforcedStyle: comparison

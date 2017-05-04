@@ -1,4 +1,4 @@
-mruby-process [![Build Status](https://travis-ci.org/appPlant/mruby-process.svg?branch=windows)](https://travis-ci.org/appPlant/mruby-process) [![Build status](https://ci.appveyor.com/api/projects/status/1uu04u7wtbup1oqk/branch/windows?svg=true)](https://ci.appveyor.com/project/katzer/mruby-process/branch/windows) 
+mruby-process [![codebeat badge](https://codebeat.co/badges/02e9d761-e8b6-4939-9ef2-b88fd0c93a84)](https://codebeat.co/projects/github-com-appplant-mruby-process-windows) [![Build Status](https://travis-ci.org/appPlant/mruby-process.svg?branch=windows)](https://travis-ci.org/appPlant/mruby-process) [![Build status](https://ci.appveyor.com/api/projects/status/1uu04u7wtbup1oqk/branch/windows?svg=true)](https://ci.appveyor.com/project/katzer/mruby-process/branch/windows) 
 =============
 
 

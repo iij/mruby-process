@@ -19,12 +19,14 @@
  * SOFTWARE.
  */
 
+#include "process.h"
+
 #include "mruby.h"
 #include "mruby/variable.h"
 #include "mruby/error.h"
 
-#include "process.h"
 #include "internal.c"
+#include "status.c"
 #include "signal.c"
 
 static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
@@ -80,7 +82,7 @@ mrb_f_exit_common(mrb_state *mrb, int bang)
       break;
 
     default:
-      status  = mrb_convert_type(mrb, status, MRB_TT_FIXNUM, "Integer", "to_i");
+      status  = mrb_to_int(mrb, status);
       istatus = mrb_fixnum(status);
   }
 
@@ -183,11 +185,11 @@ mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
     mrb_sys_fail(mrb, "waitpid failed");
 
   if (!pid && (flags & WNOHANG)) {
-    mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_nil_value());
+    mrb_pst_last_status_set(mrb, mrb_nil_value());
     return mrb_nil_value();
   }
 
-  // mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_procstat_new(mrb, pid, status));
+  mrb_last_status_set(mrb, pid, status);
   return mrb_fixnum_value(pid);
 }
 
@@ -291,9 +293,7 @@ mrb_process_set_pid_gv(mrb_state *mrb)
 void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
-  struct RClass *p, *ps, *k;
-
-  mrb_mruby_process_gem_signal_init(mrb);
+  struct RClass *p, *k;
 
   k = mrb->kernel_module;
   mrb_define_method(mrb, k, "abort", mrb_f_abort,  MRB_ARGS_OPT(1));
@@ -314,19 +314,12 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());
 
-  // ps = mrb_define_class_under(mrb, p, "Status", mrb->object_class);
-  // mrb_define_method(mrb, ps, "coredump?", mrb_procstat_coredump, MRB_ARGS_NONE());
-  // mrb_define_method(mrb, ps, "exited?", mrb_procstat_exited, MRB_ARGS_NONE());
-  // mrb_define_method(mrb, ps, "exitstatus", mrb_procstat_exitstatus, MRB_ARGS_NONE());
-  // mrb_define_method(mrb, ps, "signaled?", mrb_procstat_signaled, MRB_ARGS_NONE());
-  // mrb_define_method(mrb, ps, "stopped?", mrb_procstat_stopped, MRB_ARGS_NONE());
-  // mrb_define_method(mrb, ps, "stopsig", mrb_procstat_stopsig, MRB_ARGS_NONE());
-  // mrb_define_method(mrb, ps, "termsig", mrb_procstat_termsig, MRB_ARGS_NONE());
-
   mrb_define_const(mrb, p, "WNOHANG",   mrb_fixnum_value(WNOHANG));
   mrb_define_const(mrb, p, "WUNTRACED", mrb_fixnum_value(WUNTRACED));
 
-  mrb_process_set_childstat_gv(mrb, mrb_nil_value());
+  mrb_mruby_process_gem_signal_init(mrb);
+  mrb_mruby_process_gem_procstat_init(mrb);
+
   mrb_process_set_pid_gv(mrb);
 }
 

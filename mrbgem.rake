@@ -18,6 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+def target_win32?
+  return true if ENV['OS'] == 'Windows_NT'
+  build.is_a?(MRuby::CrossBuild) && build.host_target.include?('mingw')
+end
+
 MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.license = 'MIT'
   spec.authors = 'mruby developers'
@@ -27,11 +32,11 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.add_test_dependency 'mruby-os',      mgem: 'mruby-os'
   spec.add_test_dependency 'mruby-tiny-io', mgem: 'mruby-tiny-io'
 
-  def target_win32?
-    return true if ENV['OS'] == 'Windows_NT'
-    build.is_a?(MRuby::CrossBuild) && build.host_target.include?('mingw')
-  end
-
   spec.cc.defines << 'HAVE_MRB_PROCESS_H'
-  spec.objs.delete objfile("#{build_dir}/src/win32") unless target_win32?
+
+  if target_win32?
+    spec.objs.delete objfile("#{build_dir}/src/posix")
+  else
+    spec.objs.delete objfile("#{build_dir}/src/win32")
+  end
 end

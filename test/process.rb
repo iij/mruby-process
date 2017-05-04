@@ -25,11 +25,9 @@ def wait_for_pid(pid)
   end
 end
 
-def assert_posix(str, &block)
+def assert_not_windows(str, &block)
   assert(str, &block) if OS.posix?
 end
-
-alias assert_not_windows assert_posix
 
 def assert_windows(str, &block)
   assert(str, &block) if OS.windows?
@@ -105,7 +103,7 @@ end
 
 assert_not_windows('Process.fork') do
   pid  = fork { loop {} }
-  p, s = Process.waitpid(pid, Process::WNOHANG)
+  p, s = Process.waitpid2(pid, Process::WNOHANG)
 
   assert_nil(p)
   assert_nil(s)
@@ -113,13 +111,12 @@ assert_not_windows('Process.fork') do
   Process.kill :TERM, pid
 
   loop do
-    # wait until the process completely killed with non-block mode
-    p, s = Process.waitpid(pid, Process::WNOHANG)
+    p, s = Process.waitpid2(pid, Process::WNOHANG)
     break if p
   end
 
   assert_equal(pid, p)
-  # assert_true(s.signaled?)
+  assert_true(s.signaled?)
 end
 
 assert_windows('Process.fork') do

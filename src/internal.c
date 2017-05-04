@@ -115,7 +115,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
       mrb_value key  = mrb_ary_ref(mrb, keys, i);
       mrb_value val  = mrb_hash_get(mrb, env, key);
       mrb_value skey = mrb_symbol_p(key) ? mrb_sym2str(mrb, mrb_symbol(key)) : key;
-      mrb_value sval = mrb_convert_type(mrb, val, MRB_TT_STRING, "String", "to_str");
+      mrb_value sval = mrb_convert_type(mrb, val, MRB_TT_STRING, "String", "to_s");
       mrb_int slen   = RSTRING_LEN(skey) + RSTRING_LEN(sval) + 1;
       char str[slen];
 

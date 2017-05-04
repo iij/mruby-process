@@ -72,6 +72,7 @@ mrb_value mrb_argv0(mrb_state *mrb);
 
 mrb_value mrb_last_status_get(mrb_state *mrb);
 void mrb_last_status_set(mrb_state *mrb, pid_t pid, mrb_int status);
+void mrb_last_status_clear(mrb_state *mrb);
 
 void _exit(int status);
 void exit(int status);

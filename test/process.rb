@@ -119,7 +119,7 @@ assert('Process.kill') do
   assert_raise(ArgumentError) { Process.kill(:UNKNOWN, Process.pid) }
 end
 
-assert_not_windows('Process.fork') do
+assert_not_windows('Process.wait2') do
   pid  = fork { loop {} }
   p, s = Process.waitpid2(pid, Process::WNOHANG)
 
@@ -134,6 +134,7 @@ assert_not_windows('Process.fork') do
   end
 
   assert_equal(pid, p)
+  assert_kind_of(Process::Status, s)
   assert_true(s.signaled?)
 end
 

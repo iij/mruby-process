@@ -35,6 +35,12 @@ mrb_pst_new(mrb_state *mrb, pid_t pid, mrb_int status)
                        mrb_fixnum_value(pid), mrb_fixnum_value(status));
 }
 
+static int
+mrb_pst_last_status_get(mrb_state *mrb, mrb_value self)
+{
+    return mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+}
+
 static void
 mrb_pst_last_status_set(mrb_state *mrb, mrb_value pst)
 {
@@ -54,10 +60,10 @@ mrb_last_status_get(mrb_state *mrb)
     return mrb_gv_get(mrb, mrb_intern_lit(mrb, "$?"));
 }
 
-static int
-mrb_pst_last_status_get(mrb_state *mrb, mrb_value self)
+void
+mrb_last_status_clear(mrb_state *mrb)
 {
-    return mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@status")));
+    return mrb_pst_last_status_set(mrb, mrb_nil_value());
 }
 
 static mrb_value
@@ -145,5 +151,5 @@ mrb_mruby_process_gem_procstat_init(mrb_state *mrb)
     mrb_define_method(mrb, s, "stopsig",    mrb_pst_wstopsig, MRB_ARGS_NONE());
     mrb_define_method(mrb, s, "termsig",    mrb_pst_wtermsig, MRB_ARGS_NONE());
 
-    mrb_pst_last_status_set(mrb, mrb_nil_value());
+    mrb_last_status_clear(mrb);
 }

@@ -23,6 +23,7 @@
 
 #include "mruby.h"
 #include "mruby/variable.h"
+#include "mruby/array.h"
 #include "mruby/error.h"
 
 #include "internal.c"
@@ -185,23 +186,32 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
 }
 
 static mrb_value
-mrb_f_waitpid(mrb_state *mrb, mrb_value klass)
+mrb_f_wait(mrb_state *mrb, mrb_value klass)
 {
   mrb_int pid, flags;
-  int status;
+  int len, status;
 
-  mrb_get_args(mrb, "i|i", &pid, &flags);
+  len = mrb_get_args(mrb, "|ii", &pid, &flags);
+
+  if (len == 0) pid   = -1;
+  if (len == 1) flags = 0;
 
   if ((pid = mrb_waitpid(pid, flags, &status)) < 0)
     mrb_sys_fail(mrb, "waitpid failed");
 
   if (!pid && (flags & WNOHANG)) {
-    mrb_pst_last_status_set(mrb, mrb_nil_value());
+    mrb_last_status_clear(mrb);
     return mrb_nil_value();
   }
 
   mrb_last_status_set(mrb, pid, status);
   return mrb_fixnum_value(pid);
+}
+
+static mrb_value
+mrb_f_wait2(mrb_state *mrb, mrb_value klass)
+{
+  return mrb_assoc_new(mrb, mrb_f_wait(mrb, klass), mrb_last_status_get(mrb));
 }
 
 static int
@@ -259,8 +269,6 @@ mrb_f_exec(mrb_state *mrb, mrb_value klass)
 
   mrb_sys_fail(mrb, "exec failed");
 
-  // spawnv(1, eargp->filename, eargp->argv);
-
   return mrb_nil_value();
 }
 
@@ -280,23 +288,26 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   struct RClass *p, *k;
 
   k = mrb->kernel_module;
-  mrb_define_method(mrb, k, "abort", mrb_f_abort,  MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, k, "exit",  mrb_f_exit,   MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, k, "abort", mrb_f_abort, MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, k, "exit",  mrb_f_exit,  MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, k, "fork",  mrb_f_fork,   MRB_ARGS_BLOCK());
-  mrb_define_method(mrb, k, "exec",  mrb_f_exec,   MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_method(mrb, k, "fork",  mrb_f_fork,  MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, k, "exec",  mrb_f_exec,  MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
   p = mrb_define_module(mrb, "Process");
-  mrb_define_class_method(mrb, p, "argv0",   mrb_proc_argv0, MRB_ARGS_NONE());
-  mrb_define_class_method(mrb, p, "abort",   mrb_f_abort,   MRB_ARGS_OPT(1));
-  mrb_define_class_method(mrb, p, "exit",    mrb_f_exit,    MRB_ARGS_OPT(1));
-  mrb_define_class_method(mrb, p, "exit!",   mrb_f_exit_bang, MRB_ARGS_OPT(1));
-  mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_REQ(2)|MRB_ARGS_REST());
-  mrb_define_class_method(mrb, p, "fork",    mrb_f_fork,    MRB_ARGS_BLOCK());
-  mrb_define_class_method(mrb, p, "exec",    mrb_f_exec,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
-  mrb_define_class_method(mrb, p, "waitpid", mrb_f_waitpid, MRB_ARGS_ARG(1,1));
-  mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
-  mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, p, "argv0",    mrb_proc_argv0, MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, p, "abort",    mrb_f_abort,   MRB_ARGS_OPT(1));
+  mrb_define_class_method(mrb, p, "exit",     mrb_f_exit,    MRB_ARGS_OPT(1));
+  mrb_define_class_method(mrb, p, "exit!",    mrb_f_exit_bang, MRB_ARGS_OPT(1));
+  mrb_define_class_method(mrb, p, "kill",     mrb_f_kill,    MRB_ARGS_REQ(2)|MRB_ARGS_REST());
+  mrb_define_class_method(mrb, p, "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
+  mrb_define_class_method(mrb, p, "exec",     mrb_f_exec,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_class_method(mrb, p, "waitpid",  mrb_f_wait,    MRB_ARGS_OPT(2));
+  mrb_define_class_method(mrb, p, "waitpid2", mrb_f_wait2,   MRB_ARGS_OPT(2));
+  mrb_define_class_method(mrb, p, "wait",     mrb_f_wait,    MRB_ARGS_OPT(2));
+  mrb_define_class_method(mrb, p, "wait2",    mrb_f_wait2,   MRB_ARGS_OPT(2));
+  mrb_define_class_method(mrb, p, "pid",      mrb_f_pid,     MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, p, "ppid",     mrb_f_ppid,    MRB_ARGS_NONE());
 
   mrb_define_const(mrb, p, "WNOHANG",   mrb_fixnum_value(WNOHANG));
   mrb_define_const(mrb, p, "WUNTRACED", mrb_fixnum_value(WUNTRACED));

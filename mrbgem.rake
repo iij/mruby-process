@@ -20,7 +20,8 @@
 
 def target_win32?
   return true if ENV['OS'] == 'Windows_NT'
-  build.is_a?(MRuby::CrossBuild) && build.host_target.include?('mingw')
+  return true if build.toolchains.any? { |tc| tc == 'visualcpp' }
+  build.is_a?(MRuby::CrossBuild) && build.host_target.to_s.include?('mingw')
 end
 
 MRuby::Gem::Specification.new('mruby-process') do |spec|

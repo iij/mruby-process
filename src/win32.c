@@ -214,3 +214,15 @@ get_proc_address(const char *module, const char *func, HANDLE *mh)
     }
     return ptr;
 }
+
+int
+spawnv(pid_t *pid, const char *path, char *const argv[])
+{
+  return 0; // TODO
+}
+
+int
+spawnve(pid_t *pid, const char * path, char *const argv[], char *const envp[])
+{
+  return 0; // TODO
+}

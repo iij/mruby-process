@@ -247,6 +247,8 @@ mrb_f_exec(mrb_state *mrb, mrb_value klass)
 
   mrb_sys_fail(mrb, "exec failed");
 
+  // spawnv(1, eargp->filename, eargp->argv);
+
   return mrb_nil_value();
 }
 

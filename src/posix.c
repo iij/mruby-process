@@ -28,13 +28,22 @@
 mrb_value
 mrb_argv0(mrb_state *mrb)
 {
-    return mrb_str_new_cstr(mrb, getenv("_"));
+    const char *argv0 = getenv("_");
+
+    if (!argv0)
+        return mrb_nil_value();
+
+    return mrb_str_new_cstr(mrb,argv0);
 }
 
 mrb_value
 mrb_progname(mrb_state *mrb)
 {
-    const char *argv0    = getenv("_");
+    const char *argv0 = getenv("_");
+
+    if (!argv0)
+        return mrb_nil_value();
+
     const char *progname = strrchr(argv0, '/');
 
     if (progname)

@@ -88,8 +88,8 @@ pid_t
 waitpid(pid_t pid, int *stat_loc, int options)
 {
     DWORD timeout;
-    HANDLE hProc;
     struct ChildRecord* child;
+    int count, retried, ret;
 
     /* Artistic or GPL part start */
     if (options == WNOHANG)
@@ -99,10 +99,10 @@ waitpid(pid_t pid, int *stat_loc, int options)
     /* Artistic or GPL part end */
 
     if (pid == -1) {
-        int count = 0;
-        int ret;
         HANDLE targets[MAXCHILDNUM];
         struct ChildRecord* cause;
+
+        count = 0;
 
         FOREACH_CHILD(child) {
             if (!child->pid || child->pid < 0) continue;
@@ -124,15 +124,15 @@ waitpid(pid_t pid, int *stat_loc, int options)
         return poll_child_status(cause, stat_loc);
     }
     else {
-        child = FindChildSlot(pid);
-        int retried = 0;
+        child   = FindChildSlot(pid);
+        retried = 0;
 
         if (!child || child->hProcess == INVALID_HANDLE_VALUE)
             return -1;
 
         while (!(pid = poll_child_status(child, stat_loc))) {
             /* wait... */
-            int ret = WaitForMultipleObjects(1, &child->hProcess, FALSE, timeout);
+            ret = WaitForMultipleObjects(1, &child->hProcess, FALSE, timeout);
 
             if (ret == WAIT_OBJECT_0 + 1) return -1; /* maybe EINTR */
             if (ret != WAIT_OBJECT_0) {
@@ -236,7 +236,6 @@ static pid_t
 poll_child_status(struct ChildRecord *child, int *stat_loc)
 {
     DWORD exitcode;
-    DWORD err;
 
     if (!GetExitCodeProcess(child->hProcess, &exitcode)) {
         /* If an error occurred, return immediately. */

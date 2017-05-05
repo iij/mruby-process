@@ -138,6 +138,33 @@ assert_not_windows('Process.wait2') do
   assert_true(s.signaled?)
 end
 
+assert_not_windows('Process.waitall') do
+  assert_true Process.waitall.empty?
+
+  pids = []
+  pids << fork { exit! 2 }
+  pids << fork { exit! 1 }
+  pids << fork { exit! 0 }
+
+  a = Process.waitall
+
+  pids.each do |pid|
+    assert_raise(RuntimeError) { Process.kill(0, pid) }
+  end
+
+  assert_kind_of Array, a
+  assert_equal 3, a.size
+
+  pids.each do |pid|
+    pid_status = a.assoc(pid)
+
+    assert_kind_of Array, pid_status
+    assert_equal 2, pid_status.size
+    assert_equal pid, pid_status.first
+    assert_kind_of Process::Status, pid_status.last
+  end
+end
+
 assert_windows('Process.fork') do
   assert_raise(RuntimeError) { fork }
 end

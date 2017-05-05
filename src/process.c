@@ -31,7 +31,7 @@
 #include "signal.c"
 
 static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
-static int mrb_waitpid(int pid, int flags, int *st);
+static int mrb_waitpid(int pid, int *st, int flags);
 static void mrb_process_set_pid_gv(mrb_state *mrb);
 
 static mrb_value
@@ -196,7 +196,7 @@ mrb_f_wait(mrb_state *mrb, mrb_value klass)
   if (len == 0) pid   = -1;
   if (len == 1) flags = 0;
 
-  if ((pid = mrb_waitpid(pid, flags, &status)) < 0)
+  if ((pid = mrb_waitpid(pid, &status, flags)) < 0)
     mrb_sys_fail(mrb, "waitpid failed");
 
   if (!pid && (flags & WNOHANG)) {
@@ -217,8 +217,42 @@ mrb_f_wait2(mrb_state *mrb, mrb_value klass)
   return mrb_assoc_new(mrb, pid, st);
 }
 
+static mrb_value
+mrb_f_waitall(mrb_state *mrb, mrb_value klass)
+{
+  mrb_value result, st;
+  pid_t pid;
+  int status;
+
+  result = mrb_ary_new(mrb);
+  mrb_last_status_clear(mrb);
+
+  for (pid = -1;;) {
+    pid = mrb_waitpid(-1, &status, 0);
+
+    if (pid == -1) {
+      int e = errno;
+
+      if (e == ECHILD)
+        break;
+
+      mrb_sys_fail(mrb, "waitall failed");
+    }
+
+    if (!pid)
+      mrb_last_status_clear(mrb);
+    else
+      mrb_last_status_set(mrb, pid, status);
+
+    st = mrb_last_status_get(mrb);
+    mrb_ary_push(mrb, result, mrb_assoc_new(mrb, mrb_fixnum_value(pid), st));
+  }
+
+  return result;
+}
+
 static int
-mrb_waitpid(int pid, int flags, int *st)
+mrb_waitpid(int pid, int *st, int flags)
 {
   int result;
 
@@ -309,6 +343,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "waitpid2", mrb_f_wait2,   MRB_ARGS_OPT(2));
   mrb_define_class_method(mrb, p, "wait",     mrb_f_wait,    MRB_ARGS_OPT(2));
   mrb_define_class_method(mrb, p, "wait2",    mrb_f_wait2,   MRB_ARGS_OPT(2));
+  mrb_define_class_method(mrb, p, "waitall",  mrb_f_waitall, MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "pid",      mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",     mrb_f_ppid,    MRB_ARGS_NONE());
 

@@ -22,6 +22,10 @@
 #ifndef MRB_PROCESS_H
 #define MRB_PROCESS_H 1
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "mruby.h"
 
 #include <signal.h>
@@ -88,4 +92,7 @@ int execv(const char *path, char *const argv[]);
 int execve(const char *filename, char *const argv[], char *const envp[]);
 int kill(pid_t pid, int sig);
 
+#if defined(__cplusplus)
+} /* extern "C" { */
+#endif
 #endif /* MRB_PROCESS_H */

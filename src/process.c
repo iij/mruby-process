@@ -328,7 +328,6 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, k, "abort", mrb_f_abort, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit",  mrb_f_exit,  MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, k, "fork",  mrb_f_fork,  MRB_ARGS_BLOCK());
   mrb_define_method(mrb, k, "exec",  mrb_f_exec,  MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
   p = mrb_define_module(mrb, "Process");
@@ -337,7 +336,6 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "exit",     mrb_f_exit,    MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, p, "exit!",    mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, p, "kill",     mrb_f_kill,    MRB_ARGS_REQ(2)|MRB_ARGS_REST());
-  mrb_define_class_method(mrb, p, "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
   mrb_define_class_method(mrb, p, "exec",     mrb_f_exec,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
   mrb_define_class_method(mrb, p, "waitpid",  mrb_f_wait,    MRB_ARGS_OPT(2));
   mrb_define_class_method(mrb, p, "waitpid2", mrb_f_wait2,   MRB_ARGS_OPT(2));
@@ -346,6 +344,11 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "waitall",  mrb_f_waitall, MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "pid",      mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",     mrb_f_ppid,    MRB_ARGS_NONE());
+
+#ifndef _WIN32
+  mrb_define_method(mrb, k,       "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
+  mrb_define_class_method(mrb, p, "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
+#endif
 
   mrb_define_const(mrb, p, "WNOHANG",   mrb_fixnum_value(WNOHANG));
   mrb_define_const(mrb, p, "WUNTRACED", mrb_fixnum_value(WUNTRACED));

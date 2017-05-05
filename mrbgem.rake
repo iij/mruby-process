@@ -20,17 +20,19 @@
 
 def target_win32?
   return true if ENV['OS'] == 'Windows_NT'
-  build.is_a?(MRuby::CrossBuild) && build.host_target.include?('mingw')
+  build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
 end
 
 MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.license = 'MIT'
   spec.authors = 'mruby developers'
 
-  spec.add_test_dependency 'mruby-print',   core: 'mruby-print'
-  spec.add_test_dependency 'mruby-time',    core: 'mruby-time'
-  spec.add_test_dependency 'mruby-os',      mgem: 'mruby-os'
-  spec.add_test_dependency 'mruby-tiny-io', mgem: 'mruby-tiny-io'
+  spec.add_test_dependency 'mruby-print',     core: 'mruby-print'
+  spec.add_test_dependency 'mruby-time',      core: 'mruby-time'
+  spec.add_test_dependency 'mruby-env',       mgem: 'mruby-env'
+  spec.add_test_dependency 'mruby-os',        mgem: 'mruby-os'
+  spec.add_test_dependency 'mruby-tiny-io',   mgem: 'mruby-tiny-io'
+  spec.add_test_dependency 'mruby-array-ext', core: 'mruby-array-ext'
 
   spec.cc.defines << 'HAVE_MRB_PROCESS_H'
 

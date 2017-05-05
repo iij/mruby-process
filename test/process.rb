@@ -45,6 +45,24 @@ assert('Process::WUNTRACED') do
   assert_kind_of Integer, Process::WUNTRACED
 end
 
+assert_not_windows('Process.argv0') do
+  assert_equal ENV['_'], Process.argv0
+end
+
+assert_windows('Process.argv0') do
+  assert_include Process.argv0, 'mrbtest.exe'
+end
+
+assert('$0') do
+  assert_raise(RuntimeError, 'Should be frozen') { $0.upcase! }
+  assert_not_include ['/', '\\'], $0
+end
+
+assert('$PROGRAM_NAME') do
+  assert_raise(RuntimeError, 'Should be frozen') { $PROGRAM_NAME.upcase! }
+  assert_equal $0, $PROGRAM_NAME
+end
+
 assert('Process.pid') do
   assert_kind_of Integer, Process.pid
   assert_true Process.pid > 0
@@ -101,7 +119,7 @@ assert('Process.kill') do
   assert_raise(ArgumentError) { Process.kill(:UNKNOWN, Process.pid) }
 end
 
-assert_not_windows('Process.fork') do
+assert_not_windows('Process.wait2') do
   pid  = fork { loop {} }
   p, s = Process.waitpid2(pid, Process::WNOHANG)
 
@@ -116,9 +134,38 @@ assert_not_windows('Process.fork') do
   end
 
   assert_equal(pid, p)
+  assert_kind_of(Process::Status, s)
   assert_true(s.signaled?)
 end
 
+assert_not_windows('Process.waitall') do
+  assert_true Process.waitall.empty?
+
+  pids = []
+  pids << fork { exit! 2 }
+  pids << fork { exit! 1 }
+  pids << fork { exit! 0 }
+
+  a = Process.waitall
+
+  pids.each do |pid|
+    assert_raise(RuntimeError) { Process.kill(0, pid) }
+  end
+
+  assert_kind_of Array, a
+  assert_equal 3, a.size
+
+  pids.each do |pid|
+    pid_status = a.assoc(pid)
+
+    assert_kind_of Array, pid_status
+    assert_equal 2, pid_status.size
+    assert_equal pid, pid_status.first
+    assert_kind_of Process::Status, pid_status.last
+  end
+end
+
 assert_windows('Process.fork') do
-  assert_raise(RuntimeError) { fork }
+  assert_false Process.respond_to? :fork
+  assert_false Kernel.respond_to? :fork
 end

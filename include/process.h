@@ -22,6 +22,10 @@
 #ifndef MRB_PROCESS_H
 #define MRB_PROCESS_H 1
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "mruby.h"
 #include <stdlib.h>
 #include <signal.h>
@@ -70,8 +74,12 @@
 # define WSTOPSIG        WEXITSTATUS
 #endif
 
+mrb_value mrb_progname(mrb_state *mrb);
+mrb_value mrb_argv0(mrb_state *mrb);
+
 mrb_value mrb_last_status_get(mrb_state *mrb);
 void mrb_last_status_set(mrb_state *mrb, pid_t pid, mrb_int status);
+void mrb_last_status_clear(mrb_state *mrb);
 
 void _exit(int status);
 void exit(int status);
@@ -82,9 +90,12 @@ pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
 int fork(void);
 int spawnv(pid_t *pid, const char *path, char *const argv[]);
-int spawnve(pid_t *pid, const char * path, char *const argv[], char *const envp[]);
+int spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[]);
 int execv(const char *path, char *const argv[]);
 int execve(const char *filename, char *const argv[], char *const envp[]);
 int kill(pid_t pid, int sig);
 
+#if defined(__cplusplus)
+} /* extern "C" { */
+#endif
 #endif /* MRB_PROCESS_H */

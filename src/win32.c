@@ -19,9 +19,11 @@
  * SOFTWARE.
  */
 
-#include "process.h"
 
+#include <pthread.h>
 #include <windows.h>
+#include <process.h>
+#include <pthread.h>
 
 /* License: Ruby's */
 static struct ChildRecord {
@@ -37,6 +39,9 @@ static struct ChildRecord {
 
 static FARPROC get_proc_address(const char *module, const char *func, HANDLE *mh);
 static struct ChildRecord *FindChildSlot(pid_t pid);
+static struct ChildRecord *
+CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
+	    HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags);
 
 int
 fork(void)
@@ -103,19 +108,6 @@ waitpid(pid_t pid, int *stat_loc, int options)
 }
 
 /* License: Ruby's */
-int
-todo_spawnv(char *filename, char **argv)
-{
-
-  return _spawnv(_P_NOWAIT,filename,argv);
-}
-
-
-int
-todo_spawnve(char *filename, char **argv, char **env)
-{
-  return _spawnve(_P_NOWAIT,filename,argv,env);
-}
 
 
 int
@@ -231,13 +223,97 @@ get_proc_address(const char *module, const char *func, HANDLE *mh)
 }
 
 int
-spawnv(pid_t *pid, const char *path, char *const argv[])
+spawn(int mode, const char *cmd, const char *prog, UINT cp)
 {
-  return 0; // TODO
+
+
+  const char *shell = NULL;
+  WCHAR *wcmd = NULL, *wshell = NULL;
+  int e = 0;
+  int ret = -1;
+
+  shell = prog;
+  // wshell = mbstr_to_wstr(cp, shell, -1, NULL);
+  // wcmd = mbstr_to_wstr(cp, cmd, -1, NULL);
+
+  ret = child_result(CreateChild(wcmd, wshell, NULL, NULL, NULL, NULL, 0), mode);
+
+  free(wshell);
+  free(wcmd);
+  if (e) errno = e;
+  return ret;
 }
 
-int
-spawnve(pid_t *pid, const char * path, char *const argv[], char *const envp[])
+static struct ChildRecord *
+CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
+	    HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags)
 {
-  return 0; // TODO
+    BOOL fRet;
+    STARTUPINFOW aStartupInfo;
+    PROCESS_INFORMATION aProcessInformation;
+    SECURITY_ATTRIBUTES sa;
+    struct ChildRecord *child;
+
+    if (!cmd && !prog) {
+    	return NULL;
+    }
+
+    child = FindFreeChildSlot();
+    if (!child) {
+	     return NULL;
+    }
+
+    if (!psa) {
+    	sa.nLength              = sizeof (SECURITY_ATTRIBUTES);
+    	sa.lpSecurityDescriptor = NULL;
+    	sa.bInheritHandle       = TRUE;
+    	psa = &sa;
+    }
+
+    memset(&aStartupInfo, 0, sizeof(aStartupInfo));
+    memset(&aProcessInformation, 0, sizeof(aProcessInformation));
+    aStartupInfo.cb = sizeof(aStartupInfo);
+    aStartupInfo.dwFlags = STARTF_USESTDHANDLES;
+    if (hInput) {
+	     aStartupInfo.hStdInput  = hInput;
+    }
+    else {
+	     aStartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+    }
+    if (hOutput) {
+	     aStartupInfo.hStdOutput = hOutput;
+    }
+    else {
+	     aStartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    }
+    if (hError) {
+	     aStartupInfo.hStdError = hError;
+    }
+    else {
+	     aStartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    }
+
+    dwCreationFlags |= NORMAL_PRIORITY_CLASS;
+
+    if (lstrlenW(cmd) > 32767) {
+    	child->pid = 0;		/* release the slot */
+    	return NULL;
+    }
+
+    fRet = CreateProcessW(prog, (WCHAR *)cmd, psa, psa,
+                          psa->bInheritHandle, dwCreationFlags, NULL, NULL,
+                          &aStartupInfo, &aProcessInformation);
+
+
+    if (!fRet) {
+    	child->pid = 0;		/* release the slot */
+    	return NULL;
+    }
+
+    CloseHandle(aProcessInformation.hThread);
+
+    child->hProcess = aProcessInformation.hProcess;
+    child->pid = (pid_t)aProcessInformation.dwProcessId;
+
+    return child;
 }

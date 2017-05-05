@@ -258,20 +258,11 @@ mrb_f_spawn(mrb_state *mrb, mrb_value klass)
 
   pid_t pid;
   int status;
-  status = posix_spawn(&pid, eargp->filename, NULL, NULL, eargp->argv, eargp->envp);
-  if (status == 0) {
-      printf("Child pid: %i\n", pid);
-      if (waitpid(pid, &status, 0) != -1) {
-          printf("Child exited with status %i\n", status);
-      } else {
-          perror("waitpid");
-      }
-  } else {
-      printf("posix_spawn: %s\n", strerror(status));
-  }
-
-  return mrb_nil_value();
+  status = spawnv(&pid, eargp->filename, eargp->argv);
+  printf("%i\n",status );
 }
+
+
 
 static void
 mrb_process_set_childstat_gv(mrb_state *mrb, mrb_value childstat)

@@ -20,15 +20,46 @@
  */
 
 #include <spawn.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+
+#include <sys/wait.h>
+
 
 int
 spawnv(pid_t *pid, const char *path, char *const argv[])
 {
-    return 0; // TODO
+  int status;
+  status = posix_spawn(pid, path, NULL, NULL, argv, NULL);
+  if (status == 0) {
+      printf("Child pid: %i\n", *pid);
+      if (waitpid(*pid, &status, 0) != -1) {
+          printf("Child exited with status %i\n", status);
+      } else {
+          perror("waitpid");
+      }
+  } else {
+      printf("posix_spawn: %s\n", strerror(status));
+  }
+    return status;
 }
 
 int
 spawnve(pid_t *pid, const char * path, char *const argv[], char *const envp[])
 {
-    return 0; // TODO
+  int status;
+  status = posix_spawn(pid, path, NULL, NULL, argv, envp);
+  if (status == 0) {
+      printf("Child pid: %i\n", *pid);
+      if (waitpid(*pid, &status, 0) != -1) {
+          printf("Child exited with status %i\n", status);
+      } else {
+          perror("waitpid");
+      }
+  } else {
+      printf("posix_spawn: %s\n", strerror(status));
+  }
+    return status;
 }

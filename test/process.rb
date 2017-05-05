@@ -166,5 +166,6 @@ assert_not_windows('Process.waitall') do
 end
 
 assert_windows('Process.fork') do
-  assert_raise(RuntimeError) { fork }
+  assert_false Process.respond_to? :fork
+  assert_false Kernel.respond_to? :fork
 end

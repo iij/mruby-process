@@ -271,7 +271,7 @@ retry:
 static mrb_value
 mrb_f_fork(mrb_state *mrb, mrb_value klass)
 {
-  mrb_value b, result;
+  mrb_value b;
   int pid;
 
   mrb_get_args(mrb, "&", &b);
@@ -280,7 +280,7 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
   case 0:
     mrb_process_set_pid_gv(mrb);
     if (!mrb_nil_p(b)) {
-      mrb_yield(mrb, b, result);
+      mrb_yield(mrb, b, mrb_nil_value());
       _exit(0);
     }
     return mrb_nil_value();

@@ -108,6 +108,20 @@ assert_not_windows('Process.exec') do
   end
 end
 
+assert_not_windows('Process.exec /shell') do
+  ['/bin/bash', '/bin/sh'].each do |shell|
+    ENV['SHELL'] = shell
+
+    pid = fork { exec 'echo $SHELL > ../tmp/exec.txt' }
+
+    wait_for_pid(pid)
+
+    File.open('../tmp/exec.txt') do |f|
+      assert_equal shell, f.read.chomp
+    end
+  end
+end
+
 assert('Process.kill') do
   assert_nothing_raised { Process.kill(:EXIT, Process.pid) }
   assert_nothing_raised { Process.kill('EXIT', Process.pid) }

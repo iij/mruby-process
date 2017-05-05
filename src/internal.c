@@ -73,7 +73,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
 {
   int ai;
   char **result;
-  char *cmd;
+  char *cmd, *shell;
 
   ai  = mrb_gc_arena_save(mrb);
   cmd = mrb_execarg_argv_to_cstr(mrb, argv, argc);
@@ -86,13 +86,16 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
   else {
     result = (char **)mrb_malloc(mrb, sizeof(char *) * 4);
 
-#ifdef _WIN32
-    result[0] = strdup("C:\\WINDOWS\\system32\\cmd.exe");
-    result[1] = strdup("/c");
-#else
-    result[0] = strdup("/bin/sh");
+#if defined(__APPLE__) || defined(__linux__)
+    shell = getenv("SHELL");
+    if (!shell) shell = strdup("/bin/sh");
     result[1] = strdup("-c");
+#else
+    shell = getenv("ComSpec");
+    if (!shell) shell = strdup("C:\\WINDOWS\\system32\\cmd.exe");
+    result[1] = strdup("/c");
 #endif
+    result[0] = shell;
     result[2] = cmd;
     result[3] = NULL;
   }

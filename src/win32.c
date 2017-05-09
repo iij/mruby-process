@@ -370,7 +370,7 @@ spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[])
 }
 
 int
-spawn(int mode, const char *cmd, const char *prog, UINT cp)
+spawn(int mode, const char *cmd, const char *prog, int cp)
 {
 
 

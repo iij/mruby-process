@@ -90,3 +90,10 @@ mrb_progname(mrb_state *mrb)
 //   }
 //     return status;
 // }
+
+int
+spawn(int mode, const char *cmd, const char *prog, int cp)
+{
+
+    return 1;
+}

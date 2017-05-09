@@ -186,6 +186,16 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
 }
 
 static mrb_value
+mrb_f_spawn(mrb_state *mrb, mrb_value klass)
+{
+
+  struct mrb_execarg *eargp = mrb_execarg_new(mrb);
+
+  return mrb_fixnum_value(spawn(1, eargp->filename, eargp->filename, 1));
+
+}
+
+static mrb_value
 mrb_f_wait(mrb_state *mrb, mrb_value klass)
 {
   mrb_int pid, flags;
@@ -297,12 +307,7 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_f_exec(mrb_state *mrb, mrb_value klass)
 {
-  struct mrb_execarg *eargp = mrb_execarg_new(mrb);
-
-  if (eargp->envp)
-    execve(eargp->filename, eargp->argv, eargp->envp);
-  else
-    execv(eargp->filename, eargp->argv);
+  
 
   mrb_sys_fail(mrb, "exec failed");
 
@@ -344,7 +349,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "waitall",  mrb_f_waitall, MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "pid",      mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",     mrb_f_ppid,    MRB_ARGS_NONE());
-  // mrb_define_class_method(mrb, p, "spawn",    mrb_f_spawn,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_class_method(mrb, p, "spawn",    mrb_f_spawn,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
 #ifndef _WIN32
   mrb_define_method(mrb, k,       "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());

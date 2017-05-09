@@ -36,6 +36,8 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
 
   spec.cc.defines << 'HAVE_MRB_PROCESS_H'
 
+  puts target_win32?
+
   if target_win32?
     spec.objs.delete objfile("#{build_dir}/src/posix")
   else

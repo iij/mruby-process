@@ -36,7 +36,6 @@ typedef struct mrb_execarg {
 } mrb_execarg;
 
 static int mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **result);
-static char* mrb_execarg_argv_to_cstr(mrb_state *mrb, mrb_value *argv, mrb_int len);
 static void mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp);
 
 struct mrb_execarg*
@@ -74,7 +73,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
 {
     int ai;
     char **result;
-    char *cmd, *shell;
+    char *shell;
 
     ai  = mrb_gc_arena_save(mrb);
 
@@ -82,7 +81,6 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
         mrb_execarg_argv_to_strv(mrb, argv, argc, result);
     } else {
-        cmd    = mrb_execarg_argv_to_cstr(mrb, argv, argc);
         argc   = 3;
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
 
@@ -96,7 +94,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
         result[1] = strdup("/c");
     #endif
         result[0] = shell;
-        result[2] = cmd;
+        result[2] = mrb_str_to_cstr(mrb, argv[0]);
     }
 
     result[argc] = NULL;
@@ -170,28 +168,4 @@ mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **re
     mrb_gc_arena_restore(mrb, ai);
 
     return 0;
-}
-
-static char*
-mrb_execarg_argv_to_cstr(mrb_state *mrb, mrb_value *argv, mrb_int len)
-{
-    mrb_value str;
-    int i, ai;
-
-    if (len < 1)
-        mrb_raise(mrb, E_ARGUMENT_ERROR, "must have at least 1 argument");
-
-    ai  = mrb_gc_arena_save(mrb);
-    str = mrb_str_new(mrb, "", 0);
-
-    for (i = 0; i < len; i++) {
-        if (i > 0) {
-            mrb_str_concat(mrb, str, mrb_str_new(mrb, " ", 1));
-        }
-        mrb_str_concat(mrb, str, argv[i]);
-    }
-
-  mrb_gc_arena_restore(mrb, ai);
-
-  return RSTRING_PTR(str);
 }

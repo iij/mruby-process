@@ -53,6 +53,10 @@ assert_windows('Process.argv0') do
   assert_include Process.argv0, 'mrbtest.exe'
 end
 
+assert_windows('spawn') do
+  spawn(1,"echo hi","echo ho",1)
+end
+
 assert('$0') do
   assert_raise(RuntimeError, 'Should be frozen') { $0.upcase! }
   assert_not_include ['/', '\\'], $0

@@ -307,7 +307,7 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_f_exec(mrb_state *mrb, mrb_value klass)
 {
-  
+
 
   mrb_sys_fail(mrb, "exec failed");
 
@@ -334,6 +334,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, k, "exit",  mrb_f_exit,  MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, k, "exec",  mrb_f_exec,  MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_method(mrb, k, "spawn",  mrb_f_spawn,  MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
   p = mrb_define_module(mrb, "Process");
   mrb_define_class_method(mrb, p, "argv0",    mrb_proc_argv0, MRB_ARGS_NONE());

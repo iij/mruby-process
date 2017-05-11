@@ -89,6 +89,9 @@ assert_not_windows('Process.exec') do
   assert_raise(ArgumentError) { exec }
   assert_raise(TypeError) { exec 123 }
 
+  assert_raise(RuntimeError) { exec 'echo *', '123' }
+  assert_raise(RuntimeError) { exec '' }
+
   var = Time.now.to_i.to_s
   pid = fork { exec({ MYVAR: var }, 'echo $MYVAR > ../tmp/exec.txt') }
 

@@ -304,6 +304,7 @@ mrb_f_exec(mrb_state *mrb, mrb_value klass)
   else
     execv(eargp->filename, eargp->argv);
 
+  free(eargp);
   mrb_sys_fail(mrb, "exec failed");
 
   return mrb_nil_value();

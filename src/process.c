@@ -294,7 +294,7 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
   }
 }
 
-static mrb_value
+static inline mrb_value
 mrb_f_exec(mrb_state *mrb, mrb_value klass)
 {
   struct mrb_execarg *eargp = mrb_execarg_new(mrb);

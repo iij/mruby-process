@@ -18,45 +18,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-MRUBY_CONFIG  = File.expand_path(ENV['MRUBY_CONFIG'] || 'build_config.rb')
-MRUBY_VERSION = ENV['MRUBY_VERSION'] || 'head'
+ENV['MRUBY_CONFIG']  ||= File.expand_path('build_config.rb')
+ENV['MRUBY_VERSION'] ||= 'head'
 
-def mtask(cmd)
-  if Gem.win_platform?
-    Dir.chdir('mruby') do
-      sh "set MRUBY_CONFIG=#{MRUBY_CONFIG} && ruby .\\minirake #{cmd}"
-    end
+file :mruby do
+  if ENV['MRUBY_VERSION'] == 'head'
+    sh 'git clone --depth 1 git://github.com/mruby/mruby.git'
   else
-    sh "cd mruby && MRUBY_CONFIG=#{MRUBY_CONFIG} ruby ./minirake #{cmd}"
+    sh "curl -L --fail --retry 3 --retry-delay 1 https://github.com/mruby/mruby/archive/#{ENV['MRUBY_VERSION']}.tar.gz -s -o - | tar zxf -"
+    mv "mruby-#{ENV['MRUBY_VERSION']}", 'mruby'
   end
 end
 
-file :mruby do
-  if MRUBY_VERSION == 'head'
-    sh 'git clone --depth 1 git://github.com/mruby/mruby.git'
-  else
-    sh "curl -L --fail --retry 3 --retry-delay 1 https://github.com/mruby/mruby/archive/#{MRUBY_VERSION}.tar.gz -s -o - | tar zxf -"
-    mv "mruby-#{MRUBY_VERSION}", 'mruby'
-  end
+FileUtils.mkdir_p('tmp')
+Rake::Task[:mruby].invoke
+
+namespace :mruby do
+  Dir.chdir('mruby') { load 'Rakefile' }
 end
 
 desc 'compile binary'
-task compile: :mruby do
-  mtask 'all'
-end
+task compile: 'mruby:all'
 
 desc 'test'
-task test: :mruby do
-  mkdir_p 'tmp'
-  mtask 'test'
-end
+task test: 'mruby:test'
 
 desc 'cleanup'
-task :clean do
-  mtask 'clean'
-end
+task clean: 'mruby:clean'
 
-desc 'deep cleanup'
-task :cleanall do
-  mtask 'deep_clean'
-end
+desc 'cleanup all'
+task cleanall: 'mruby:deep_clean'

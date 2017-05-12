@@ -315,7 +315,12 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
 static inline mrb_value
 mrb_f_exec(mrb_state *mrb, mrb_value klass)
 {
+  struct mrb_execarg *eargp = mrb_execarg_new(mrb);
 
+  if (eargp->envp)
+    execve(eargp->filename, eargp->argv, eargp->envp);
+  else
+    execv(eargp->filename, eargp->argv);
 
   free(eargp);
   mrb_sys_fail(mrb, "exec failed");

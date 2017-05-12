@@ -312,11 +312,12 @@ mrb_f_fork(mrb_state *mrb, mrb_value klass)
   }
 }
 
-static mrb_value
+static inline mrb_value
 mrb_f_exec(mrb_state *mrb, mrb_value klass)
 {
 
 
+  free(eargp);
   mrb_sys_fail(mrb, "exec failed");
 
   return mrb_nil_value();
@@ -361,6 +362,11 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   mrb_define_class_method(mrb, p, "spawn",    mrb_f_spawn,    MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
 #ifndef _WIN32
+  mrb_define_method(mrb, k,       "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
+  mrb_define_class_method(mrb, p, "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
+#endif
+
+#if defined(__APPLE__) || defined(__linux__)
   mrb_define_method(mrb, k,       "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
   mrb_define_class_method(mrb, p, "fork",     mrb_f_fork,    MRB_ARGS_BLOCK());
 #endif

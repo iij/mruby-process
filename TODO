@@ -1,0 +1,1 @@
+alle tests einpassen. heisst neue tests schreiben und die tests, die bisher mithilfe von fork getestet werden (wie zb der exit test) auf spawn ummünzen und für win aktivieren

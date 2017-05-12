@@ -188,11 +188,19 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_f_spawn(mrb_state *mrb, mrb_value klass)
 {
-
   struct mrb_execarg *eargp = mrb_execarg_new(mrb);
+  int pid;
 
-  return mrb_fixnum_value(spawn(1, eargp->filename, eargp->filename, 1));
 
+  // if (eargp->envp)
+    //execve(eargp->filename, eargp->argv, eargp->envp);
+  // else
+    pid = spawnv(P_NOWAIT, eargp->filename, eargp->argv);
+
+  if (pid == -1)
+    mrb_sys_fail(mrb, "spawn failed");
+
+  return mrb_fixnum_value(pid);
 }
 
 static mrb_value
@@ -208,7 +216,7 @@ mrb_f_wait(mrb_state *mrb, mrb_value klass)
 
   if ((pid = mrb_waitpid(pid, &status, flags)) < 0)
     mrb_sys_fail(mrb, "waitpid failed");
-
+    
   if (!pid && (flags & WNOHANG)) {
     mrb_last_status_clear(mrb);
     return mrb_nil_value();

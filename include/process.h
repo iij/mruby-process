@@ -31,8 +31,9 @@ extern "C" {
 #include <signal.h>
 #include <sys/types.h>
 
-
-
+#ifndef P_NOWAIT
+# define P_NOWAIT _P_NOWAIT
+#endif
 
 #ifndef WNOHANG
 # define WNOHANG -1
@@ -89,9 +90,8 @@ pid_t getppid(void);
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
 int fork(void);
-int spawnv(pid_t *pid, const char *path, char *const argv[]);
+int spawnv(int mode, const char *cmd, char *const argv[]);
 int spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[]);
-int spawn(int mode, const char *cmd, const char *prog, int cp);
 int execv(const char *path, char *const argv[]);
 int execve(const char *filename, char *const argv[], char *const envp[]);
 int kill(pid_t pid, int sig);

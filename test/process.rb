@@ -54,7 +54,8 @@ assert_windows('Process.argv0') do
 end
 
 assert_windows('spawn') do
-  spawn(1,"echo hi","echo ho",1)
+  assert_nothing_raised { spawn('echo hi ') }
+
 end
 
 assert('$0') do

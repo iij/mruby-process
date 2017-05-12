@@ -26,6 +26,7 @@
 #include <windows.h>
 #include <process.h>
 
+
 #define MAXCHILDNUM 256 /* max num of child processes */
 #define P_OVERLAY 2
 
@@ -51,6 +52,10 @@ CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
 	    HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags);
 static struct ChildRecord * FindFreeChildSlot(void);
 static pid_t child_result(struct ChildRecord *child, int mode);
+static int check_spawn_mode(int mode);
+static WCHAR * mrbstr_to_wstr(const char *utf8, int mlen);
+static int prepend_c(char *cmd);
+static int check_shell(char *program);
 
 int
 fork(void)
@@ -357,33 +362,33 @@ mrb_progname(mrb_state *mrb)
     return mrb_str_new_cstr(mrb, progname);
 }
 
-int
-spawnv(pid_t *pid, const char *path, char *const argv[])
-{
-  return 0; // TODO
-}
+// int
+// spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[])
+// {
+//   return 0; // TODO
+// }
 
 int
-spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[])
-{
-  return 0; // TODO
-}
-
-int
-spawn(int mode, const char *cmd, const char *prog, int cp)
+spawnv(int mode, const char *shell, char *const argv[])
 {
 
 
-  const char *shell = NULL;
   WCHAR *wcmd = NULL, *wshell = NULL;
   int e = 0;
   int ret = -1;
+  char tCmd[strlen(argv[2])];
+  char tShell[strlen(shell)];
+  strcpy(tCmd,argv[2]);
+  strcpy(tShell,shell);
+  if(check_shell(tShell))
+    prepend_c(tCmd);
+  if (check_spawn_mode(mode))
+    return -1;
 
-  shell = prog;
-  // wshell = mbstr_to_wstr(cp, shell, -1, NULL);
-  // wcmd = mbstr_to_wstr(cp, cmd, -1, NULL);
+  wshell = mrbstr_to_wstr(tShell, strlen(tShell));
+  wcmd = mrbstr_to_wstr(tCmd, strlen(tCmd));
 
-  ret = child_result(CreateChild(wcmd, wshell, NULL, NULL, NULL, NULL, 0), mode);
+  ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), mode);
 
   free(wshell);
   free(wcmd);
@@ -414,7 +419,7 @@ FindFreeChildSlot(void)
 {
     FOREACH_CHILD(child) {
 	     if (!child->pid) {
-  	      child->pid = -1;	/* lock the slot */
+  	      child->pid = -1;	/* lock  the slot */
   	       child->hProcess = NULL;
   	        return child;
 	     }
@@ -423,7 +428,7 @@ FindFreeChildSlot(void)
 }
 
 static struct ChildRecord *
-CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
+CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
 	    HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags)
 {
     BOOL fRet;
@@ -432,15 +437,13 @@ CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
     SECURITY_ATTRIBUTES sa;
     struct ChildRecord *child;
 
-    if (!cmd && !prog) {
+    if (!cmd && !shell) {
     	return NULL;
     }
-
     child = FindFreeChildSlot();
     if (!child) {
 	     return NULL;
     }
-
     if (!psa) {
     	sa.nLength              = sizeof (SECURITY_ATTRIBUTES);
     	sa.lpSecurityDescriptor = NULL;
@@ -478,11 +481,9 @@ CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
     	return NULL;
     }
 
-    fRet = CreateProcessW(prog, (WCHAR *)cmd, psa, psa,
+    fRet = CreateProcessW(shell, (WCHAR *)cmd, psa, psa,
                           psa->bInheritHandle, dwCreationFlags, NULL, NULL,
                           &aStartupInfo, &aProcessInformation);
-
-
     if (!fRet) {
     	child->pid = 0;		/* release the slot */
     	return NULL;
@@ -494,4 +495,45 @@ CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
     child->pid = (pid_t)aProcessInformation.dwProcessId;
 
     return child;
+}
+
+static int
+check_shell(char *program){
+  if (strstr(program, "cmd.exe"))
+    return 1;
+  return -1;
+}
+
+static int
+prepend_c(char *cmd){
+  char temp[strlen(cmd)];
+  sprintf(temp, "%s %s", "/c", cmd);
+  strcpy(cmd, temp);
+}
+
+static int
+check_spawn_mode(int mode)
+{
+    switch (mode) {
+      case P_NOWAIT:
+      case P_OVERLAY:
+	       return 0;
+      default:
+	       return -1;
+    }
+}
+
+static WCHAR *
+mrbstr_to_wstr(const char *utf8, int mlen)
+{
+  int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8, mlen, NULL, 0);
+  wchar_t* utf16 = (wchar_t*)malloc((wlen+1) * sizeof(wchar_t));
+
+  if (utf16 == NULL)
+    return NULL;
+
+  if (MultiByteToWideChar(CP_UTF8, 0, utf8, mlen, utf16, wlen) > 0)
+    utf16[wlen] = 0;
+
+  return utf16;
 }

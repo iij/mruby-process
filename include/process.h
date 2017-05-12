@@ -31,8 +31,14 @@ extern "C" {
 #include <signal.h>
 #include <sys/types.h>
 
+#ifdef _WIN32
 #ifndef P_NOWAIT
 # define P_NOWAIT _P_NOWAIT
+#endif
+#else
+#ifndef P_NOWAIT
+# define P_NOWAIT -1
+#endif
 #endif
 
 #ifndef WNOHANG

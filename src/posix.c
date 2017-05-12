@@ -92,7 +92,7 @@ mrb_progname(mrb_state *mrb)
 // }
 
 int
-spawn(int mode, const char *cmd, const char *prog, int cp)
+spawnv(int mode, const char *cmd, const char *prog, int cp)
 {
 
     return 1;

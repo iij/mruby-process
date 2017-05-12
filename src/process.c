@@ -216,7 +216,7 @@ mrb_f_wait(mrb_state *mrb, mrb_value klass)
 
   if ((pid = mrb_waitpid(pid, &status, flags)) < 0)
     mrb_sys_fail(mrb, "waitpid failed");
-    
+
   if (!pid && (flags & WNOHANG)) {
     mrb_last_status_clear(mrb);
     return mrb_nil_value();

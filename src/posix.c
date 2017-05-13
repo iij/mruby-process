@@ -91,9 +91,14 @@ mrb_progname(mrb_state *mrb)
 //     return status;
 // }
 
-int
-spawnv(int mode, const char *cmd, const char *prog, int cp)
+pid_t
+spawnv(int mode, const char *shell, char *const argv[])
 {
+    return 1;
+}
 
+pid_t
+spawnve(int mode, const char *shell, char *const argv[], char *const envp[])
+{
     return 1;
 }

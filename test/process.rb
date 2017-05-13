@@ -53,11 +53,6 @@ assert_windows('Process.argv0') do
   assert_include Process.argv0, 'mrbtest.exe'
 end
 
-assert_windows('spawn') do
-  assert_nothing_raised { spawn('echo hi ') }
-
-end
-
 assert('$0') do
   assert_raise(RuntimeError, 'Should be frozen') { $0.upcase! }
   assert_not_include ['/', '\\'], $0
@@ -90,6 +85,40 @@ assert('Process.ppid') do
   assert_true Process.pid > 0
 end
 
+assert_windows('Process.spawn') do
+  assert_raise(ArgumentError) { spawn }
+  assert_raise(TypeError) { spawn 123 }
+
+  assert_raise(RuntimeError) { spawn 'echo *', '123' }
+
+  pid = spawn 'echo'
+  wait_for_pid(pid)
+
+  assert_kind_of Integer, pid
+  assert_true pid > 0
+  assert_not_equal $PID, pid
+  assert_kind_of Process::Status, $?
+  assert_equal $?.pid, pid
+
+  var = Time.now.to_i.to_s
+  pid = spawn("echo #{var}>tmp/spawn.txt")
+
+  wait_for_pid(pid)
+
+  File.open('tmp/spawn.txt') do |f|
+    assert_equal var, f.read.chomp
+  end
+
+  var = "x#{var}"
+  pid = spawn({ MYVAR: var }, 'echo %MYVAR%>tmp/spawn.txt')
+
+  wait_for_pid(pid)
+
+  File.open('tmp/spawn.txt') do |f|
+    assert_equal var, f.read.chomp
+  end
+end
+
 assert_not_windows('Process.exec') do
   assert_raise(ArgumentError) { exec }
   assert_raise(TypeError) { exec 123 }
@@ -98,7 +127,7 @@ assert_not_windows('Process.exec') do
   assert_raise(RuntimeError) { exec '' }
 
   var = Time.now.to_i.to_s
-  pid = fork { exec({ MYVAR: var }, 'echo $MYVAR > tmp/exec.txt') }
+  pid = fork { exec({ MYVAR: var }, 'echo $MYVAR>tmp/exec.txt') }
 
   wait_for_pid(pid)
 
@@ -107,7 +136,7 @@ assert_not_windows('Process.exec') do
   end
 
   var = "x#{var}"
-  pid = fork { exec '/bin/sh', '-c', "echo #{var} > tmp/exec.txt" }
+  pid = fork { exec '/bin/sh', '-c', "echo #{var}>tmp/exec.txt" }
 
   wait_for_pid(pid)
 
@@ -120,7 +149,7 @@ assert_not_windows('Process.exec /shell') do
   ['/bin/bash', '/bin/sh'].each do |shell|
     ENV['SHELL'] = shell
 
-    pid = fork { exec 'echo $SHELL > tmp/exec.txt' }
+    pid = fork { exec 'echo $SHELL>tmp/exec.txt' }
 
     wait_for_pid(pid)
 

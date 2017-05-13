@@ -46,16 +46,41 @@ static FARPROC get_proc_address(const char *module, const char *func, HANDLE *mh
 static pid_t poll_child_status(struct ChildRecord *child, int *stat_loc);
 static struct ChildRecord *FindChildSlot(pid_t pid);
 static struct ChildRecord *FindChildSlotByHandle(HANDLE h);
+static struct ChildRecord *FindFreeChildSlot(void);
 static void CloseChildHandle(struct ChildRecord *child);
-static struct ChildRecord *
-CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa,
-	    HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags);
-static struct ChildRecord * FindFreeChildSlot(void);
+static struct ChildRecord *CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa, HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags);
 static pid_t child_result(struct ChildRecord *child, int mode);
 static int check_spawn_mode(int mode);
-static WCHAR * mrbstr_to_wstr(const char *utf8, int mlen);
-static int prepend_c(char *cmd);
-static int check_shell(char *program);
+static char* argv_to_str(char* const* argv);
+static WCHAR* str_to_wstr(const char *utf8, int mlen);
+
+mrb_value
+mrb_argv0(mrb_state *mrb)
+{
+    TCHAR argv0[MAX_PATH + 1];
+
+    GetModuleFileName(NULL, argv0, MAX_PATH + 1);
+
+    return mrb_str_new_cstr(mrb, argv0);
+}
+
+mrb_value
+mrb_progname(mrb_state *mrb)
+{
+    TCHAR argv0[MAX_PATH + 1];
+    char *progname;
+
+    GetModuleFileName(NULL, argv0, MAX_PATH + 1);
+
+    progname = strrchr(argv0, '\\');
+
+    if (progname)
+        progname++;
+    else
+        progname = argv0;
+
+    return mrb_str_new_cstr(mrb, progname);
+}
 
 int
 fork(void)
@@ -63,7 +88,6 @@ fork(void)
     return -1;
 }
 
-/* License: Ruby's */
 pid_t
 getppid(void)
 {
@@ -94,7 +118,6 @@ getppid(void)
     return ppid;
 }
 
-/* License: Artistic or GPL */
 pid_t
 waitpid(pid_t pid, int *stat_loc, int options)
 {
@@ -162,12 +185,11 @@ waitpid(pid_t pid, int *stat_loc, int options)
     return pid;
 }
 
-/* License: Ruby's */
 int
 kill(pid_t pid, int sig)
 {
     pid_t ret = 0;
-    DWORD ctrlEvent;
+    DWORD ctrlEvent, status;
     HANDLE hProc;
     struct ChildRecord* child;
 
@@ -214,8 +236,6 @@ kill(pid_t pid, int sig)
                 ret = -1;
             }
             else {
-                DWORD status;
-
                 if (!GetExitCodeProcess(hProc, &status)) {
                     ret = -1;
                 }
@@ -237,12 +257,161 @@ kill(pid_t pid, int sig)
 
     default:
         ret = -1;
-  }
+    }
 
-  return ret;
+    return ret;
 }
 
-/* License: Ruby's */
+pid_t
+spawnve(int mode, const char *shell, char *const argv[], char *const envp[])
+{
+    // TODO: envp
+    return spawnv(mode, shell, argv);
+}
+
+pid_t
+spawnv(int mode, const char *shell, char *const argv[])
+{
+    WCHAR *wcmd, *wshell;
+    pid_t ret = -1;
+    char *cmd = argv_to_str(argv);
+    char tCmd[strlen(cmd)];
+    char tShell[strlen(shell)];
+    strcpy(tCmd,cmd);
+    strcpy(tShell,shell);
+
+    if (check_spawn_mode(mode))
+        return -1;
+
+    wshell = str_to_wstr(tShell, strlen(tShell));
+    wcmd   = str_to_wstr(tCmd, strlen(tCmd));
+
+    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), mode);
+
+    free(wshell);
+    free(wcmd);
+    free(cmd);
+
+    return ret;
+}
+
+static FARPROC
+get_proc_address(const char *module, const char *func, HANDLE *mh)
+{
+    HANDLE h;
+    FARPROC ptr;
+
+    if (mh)
+      h = LoadLibrary(module);
+    else
+      h = GetModuleHandle(module);
+    if (!h)
+      return NULL;
+
+    ptr = GetProcAddress(h, func);
+    if (mh) {
+      if (ptr)
+        *mh = h;
+      else
+        FreeLibrary(h);
+    }
+    return ptr;
+}
+
+static struct ChildRecord *
+CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
+        HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags)
+{
+    BOOL fRet;
+    STARTUPINFOW aStartupInfo;
+    PROCESS_INFORMATION aProcessInformation;
+    SECURITY_ATTRIBUTES sa;
+    struct ChildRecord *child;
+
+    if (!cmd && !shell)
+        return NULL;
+
+    child = FindFreeChildSlot();
+
+    if (!child)
+        return NULL;
+
+    if (!psa) {
+        sa.nLength              = sizeof (SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = NULL;
+        sa.bInheritHandle       = TRUE;
+        psa = &sa;
+    }
+
+    memset(&aStartupInfo, 0, sizeof(aStartupInfo));
+    memset(&aProcessInformation, 0, sizeof(aProcessInformation));
+
+    aStartupInfo.cb      = sizeof(aStartupInfo);
+    aStartupInfo.dwFlags = STARTF_USESTDHANDLES;
+
+    if (hInput) {
+       aStartupInfo.hStdInput  = hInput;
+    }
+    else {
+       aStartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+    }
+
+    if (hOutput) {
+       aStartupInfo.hStdOutput = hOutput;
+    }
+    else {
+       aStartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    }
+
+    if (hError) {
+       aStartupInfo.hStdError = hError;
+    }
+    else {
+       aStartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    }
+
+    dwCreationFlags |= NORMAL_PRIORITY_CLASS;
+
+    if (lstrlenW(cmd) > 32767) {
+        child->pid = 0;     /* release the slot */
+        return NULL;
+    }
+
+    fRet = CreateProcessW(shell, (WCHAR*) cmd, psa, psa,
+                          psa->bInheritHandle, dwCreationFlags, NULL, NULL,
+                          &aStartupInfo, &aProcessInformation);
+
+    if (!fRet) {
+        child->pid = 0;     /* release the slot */
+        return NULL;
+    }
+
+    CloseHandle(aProcessInformation.hThread);
+
+    child->hProcess = aProcessInformation.hProcess;
+    child->pid      = (pid_t)aProcessInformation.dwProcessId;
+
+    return child;
+}
+
+static pid_t
+child_result(struct ChildRecord *child, int mode)
+{
+    DWORD exitcode;
+
+    if (!child)
+        return -1;
+
+    if (mode == P_OVERLAY) {
+        WaitForSingleObject(child->hProcess, INFINITE);
+        GetExitCodeProcess(child->hProcess, &exitcode);
+        CloseChildHandle(child);
+        _exit(exitcode);
+    }
+
+    return child->pid;
+}
+
 static pid_t
 poll_child_status(struct ChildRecord *child, int *stat_loc)
 {
@@ -275,7 +444,6 @@ poll_child_status(struct ChildRecord *child, int *stat_loc)
     return 0;
 }
 
-/* License: Ruby's */
 static struct ChildRecord *
 FindChildSlot(pid_t pid)
 {
@@ -287,7 +455,6 @@ FindChildSlot(pid_t pid)
     return NULL;
 }
 
-/* License: Ruby's */
 static struct ChildRecord *
 FindChildSlotByHandle(HANDLE h)
 {
@@ -299,7 +466,21 @@ FindChildSlotByHandle(HANDLE h)
     return NULL;
 }
 
-/* License: Ruby's */
+static struct ChildRecord *
+FindFreeChildSlot(void)
+{
+    FOREACH_CHILD(child) {
+        if (!child->pid) {
+            child->pid      = -1;
+            child->hProcess = NULL;
+
+            return child;
+        }
+    } END_FOREACH_CHILD;
+
+    return NULL;
+}
+
 static void
 CloseChildHandle(struct ChildRecord *child)
 {
@@ -310,230 +491,49 @@ CloseChildHandle(struct ChildRecord *child)
     CloseHandle(h);
 }
 
-/* License: Ruby's */
-static FARPROC
-get_proc_address(const char *module, const char *func, HANDLE *mh)
-{
-    HANDLE h;
-    FARPROC ptr;
-
-    if (mh)
-      h = LoadLibrary(module);
-    else
-      h = GetModuleHandle(module);
-    if (!h)
-      return NULL;
-
-    ptr = GetProcAddress(h, func);
-    if (mh) {
-      if (ptr)
-        *mh = h;
-      else
-        FreeLibrary(h);
-    }
-    return ptr;
-}
-
-mrb_value
-mrb_argv0(mrb_state *mrb)
-{
-    TCHAR argv0[MAX_PATH + 1];
-
-    GetModuleFileName(NULL, argv0, MAX_PATH + 1);
-
-    return mrb_str_new_cstr(mrb, argv0);
-}
-
-mrb_value
-mrb_progname(mrb_state *mrb)
-{
-    TCHAR argv0[MAX_PATH + 1];
-    char *progname;
-
-    GetModuleFileName(NULL, argv0, MAX_PATH + 1);
-
-    progname = strrchr(argv0, '\\');
-
-    if (progname)
-        progname++;
-    else
-        progname = argv0;
-
-    return mrb_str_new_cstr(mrb, progname);
-}
-
-// int
-// spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[])
-// {
-//   return 0; // TODO
-// }
-
-int
-spawnv(int mode, const char *shell, char *const argv[])
-{
-
-
-  WCHAR *wcmd = NULL, *wshell = NULL;
-  int e = 0;
-  int ret = -1;
-  char tCmd[strlen(argv[2])];
-  char tShell[strlen(shell)];
-  strcpy(tCmd,argv[2]);
-  strcpy(tShell,shell);
-  if(check_shell(tShell))
-    prepend_c(tCmd);
-  if (check_spawn_mode(mode))
-    return -1;
-
-  wshell = mrbstr_to_wstr(tShell, strlen(tShell));
-  wcmd = mrbstr_to_wstr(tCmd, strlen(tCmd));
-
-  ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), mode);
-
-  free(wshell);
-  free(wcmd);
-  if (e) errno = e;
-  return ret;
-}
-
-static pid_t
-child_result(struct ChildRecord *child, int mode)
-{
-    DWORD exitcode;
-
-    if (!child) {
-	     return -1;
-    }
-
-    if (mode == P_OVERLAY) {
-    	WaitForSingleObject(child->hProcess, INFINITE);
-    	GetExitCodeProcess(child->hProcess, &exitcode);
-    	CloseChildHandle(child);
-    	_exit(exitcode);
-    }
-    return child->pid;
-}
-
-static struct ChildRecord *
-FindFreeChildSlot(void)
-{
-    FOREACH_CHILD(child) {
-	     if (!child->pid) {
-  	      child->pid = -1;	/* lock  the slot */
-  	       child->hProcess = NULL;
-  	        return child;
-	     }
-    } END_FOREACH_CHILD;
-    return NULL;
-}
-
-static struct ChildRecord *
-CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
-	    HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags)
-{
-    BOOL fRet;
-    STARTUPINFOW aStartupInfo;
-    PROCESS_INFORMATION aProcessInformation;
-    SECURITY_ATTRIBUTES sa;
-    struct ChildRecord *child;
-
-    if (!cmd && !shell) {
-    	return NULL;
-    }
-    child = FindFreeChildSlot();
-    if (!child) {
-	     return NULL;
-    }
-    if (!psa) {
-    	sa.nLength              = sizeof (SECURITY_ATTRIBUTES);
-    	sa.lpSecurityDescriptor = NULL;
-    	sa.bInheritHandle       = TRUE;
-    	psa = &sa;
-    }
-
-    memset(&aStartupInfo, 0, sizeof(aStartupInfo));
-    memset(&aProcessInformation, 0, sizeof(aProcessInformation));
-    aStartupInfo.cb = sizeof(aStartupInfo);
-    aStartupInfo.dwFlags = STARTF_USESTDHANDLES;
-    if (hInput) {
-	     aStartupInfo.hStdInput  = hInput;
-    }
-    else {
-	     aStartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-    }
-    if (hOutput) {
-	     aStartupInfo.hStdOutput = hOutput;
-    }
-    else {
-	     aStartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-    }
-    if (hError) {
-	     aStartupInfo.hStdError = hError;
-    }
-    else {
-	     aStartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-    }
-
-    dwCreationFlags |= NORMAL_PRIORITY_CLASS;
-
-    if (lstrlenW(cmd) > 32767) {
-    	child->pid = 0;		/* release the slot */
-    	return NULL;
-    }
-
-    fRet = CreateProcessW(shell, (WCHAR *)cmd, psa, psa,
-                          psa->bInheritHandle, dwCreationFlags, NULL, NULL,
-                          &aStartupInfo, &aProcessInformation);
-    if (!fRet) {
-    	child->pid = 0;		/* release the slot */
-    	return NULL;
-    }
-
-    CloseHandle(aProcessInformation.hThread);
-
-    child->hProcess = aProcessInformation.hProcess;
-    child->pid = (pid_t)aProcessInformation.dwProcessId;
-
-    return child;
-}
-
-static int
-check_shell(char *program){
-  if (strstr(program, "cmd.exe"))
-    return 1;
-  return -1;
-}
-
-static int
-prepend_c(char *cmd){
-  char temp[strlen(cmd)];
-  sprintf(temp, "%s %s", "/c", cmd);
-  strcpy(cmd, temp);
-}
-
 static int
 check_spawn_mode(int mode)
 {
     switch (mode) {
-      case P_NOWAIT:
-      case P_OVERLAY:
-	       return 0;
-      default:
-	       return -1;
+        case P_NOWAIT:
+        case P_OVERLAY:
+           return 0;
+        default:
+           return -1;
     }
 }
 
-static WCHAR *
-mrbstr_to_wstr(const char *utf8, int mlen)
+static char*
+argv_to_str(char* const* argv)
 {
-  int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8, mlen, NULL, 0);
-  wchar_t* utf16 = (wchar_t*)malloc((wlen+1) * sizeof(wchar_t));
+    char args[8191];
+    int i     = 0;
+    char* arg = argv[i];
 
-  if (utf16 == NULL)
-    return NULL;
+    while (arg != NULL) {
+        if (i == 0)
+            sprintf(args, "%s", arg);
+        else
+            sprintf(args, "%s %s", args, arg);
 
-  if (MultiByteToWideChar(CP_UTF8, 0, utf8, mlen, utf16, wlen) > 0)
-    utf16[wlen] = 0;
+        i++;
+        arg = argv[i];
+    }
 
-  return utf16;
+    return strdup(args);
+}
+
+static WCHAR*
+str_to_wstr(const char *utf8, int mlen)
+{
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8, mlen, NULL, 0);
+    wchar_t* utf16 = (wchar_t*)malloc((wlen+1) * sizeof(wchar_t));
+
+    if (utf16 == NULL)
+        return NULL;
+
+    if (MultiByteToWideChar(CP_UTF8, 0, utf8, mlen, utf16, wlen) > 0)
+        utf16[wlen] = 0;
+
+    return utf16;
 }

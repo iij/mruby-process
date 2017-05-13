@@ -96,8 +96,8 @@ pid_t getppid(void);
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
 int fork(void);
-int spawnv(int mode, const char *cmd, char *const argv[]);
-int spawnve(pid_t *pid, const char *path, char *const argv[], char *const envp[]);
+pid_t spawnv(int mode, const char *path, char *const argv[]);
+pid_t spawnve(int mode, const char *path, char *const argv[], char *const envp[]);
 int execv(const char *path, char *const argv[]);
 int execve(const char *filename, char *const argv[], char *const envp[]);
 int kill(pid_t pid, int sig);

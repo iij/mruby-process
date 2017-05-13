@@ -71,14 +71,22 @@ mrb_execarg_new(mrb_state *mrb)
 static void
 mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp)
 {
-    int ai;
+    int ai, use_cmd;
     char **result;
     char *shell;
+    const char *tCmd;
     mrb_value argv0 = mrb_nil_value();
 
-    ai  = mrb_gc_arena_save(mrb);
+    ai   = mrb_gc_arena_save(mrb);
+    tCmd = mrb_string_value_ptr(mrb, argv[0]);
 
-    if (argc > 1 || !strrchr(mrb_string_value_ptr(mrb, argv[0]), ' ')) {
+#if defined(__APPLE__) || defined(__linux__)
+    use_cmd = (argc > 1 || !strrchr(tCmd, ' ')) ? 1 : 0;
+#else
+    use_cmd = (argc > 1 || strstr(tCmd, ".exe")) ? 1 : 0;
+#endif
+
+    if (use_cmd) {
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
         mrb_execarg_argv_to_strv(mrb, argv, argc, result);
     } else {

@@ -25,7 +25,7 @@ file :mruby do
   if ENV['MRUBY_VERSION'] == 'head'
     sh 'git clone --depth 1 git://github.com/mruby/mruby.git'
   else
-    sh "curl -L --fail --retry 3 --retry-delay 1 https://github.com/mruby/mruby/archive/#{ENV['MRUBY_VERSION']}.tar.gz -s -o - | tar zxf -"
+    sh "curl -L --fail --retry 3 --retry-delay 1 https://github.com/mruby/mruby/archive/#{ENV['MRUBY_VERSION']}.tar.gz -s -o - | tar zxf -" # rubocop:disable LineLength
     mv "mruby-#{ENV['MRUBY_VERSION']}", 'mruby'
   end
 end

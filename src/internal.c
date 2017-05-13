@@ -74,6 +74,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
     int ai;
     char **result;
     char *shell;
+    mrb_value argv0 = mrb_nil_value();
 
     ai  = mrb_gc_arena_save(mrb);
 
@@ -99,11 +100,18 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
 
     result[argc] = NULL;
 
+#if defined(__APPLE__) || defined(__linux__)
     if (result[0][0] != '/') {
-        mrb_value argv0;
         argv0 = mrb_str_new(mrb, "/bin/", 5);
-        mrb_str_cat_cstr(mrb, argv0, result[0]);
+    }
+#else
+    if (result[0][1] != ':') {
+        argv0 = mrb_str_new(mrb, "C:\\GnuWin\\bin\\", 14); // TODO: !!!
+    }
+#endif
 
+    if (mrb_bool(argv0)) {
+        mrb_str_cat_cstr(mrb, argv0, result[0]);
         result[0] = mrb_str_to_cstr(mrb, argv0);
     }
 

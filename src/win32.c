@@ -26,9 +26,15 @@
 #include <windows.h>
 #include <process.h>
 
-
 #define MAXCHILDNUM 256 /* max num of child processes */
-#define P_OVERLAY 2
+
+#ifndef P_OVERLAY
+# define P_OVERLAY 2
+#endif
+
+#ifndef P_NOWAIT
+# define P_NOWAIT 1
+#endif
 
 /* License: Ruby's */
 static struct ChildRecord {
@@ -282,7 +288,7 @@ spawnv(const char *shell, char *const argv[])
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(tCmd, strlen(tCmd));
 
-    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), _P_NOWAIT);
+    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), P_NOWAIT);
 
     free(wshell);
     free(wcmd);

@@ -89,9 +89,9 @@ assert('Process.spawn') do
   assert_raise(ArgumentError) { spawn }
   assert_raise(TypeError) { spawn 123 }
 
-  assert_raise(RuntimeError) { spawn 'echo *', '123' }
+  assert_raise(RuntimeError) { wait_for_pid spawn('echo *', '123') }
 
-  pid = spawn 'echo'
+  pid = spawn 'echo *'
   wait_for_pid(pid)
 
   assert_kind_of Integer, pid
@@ -110,7 +110,7 @@ assert('Process.spawn') do
   end
 end
 
-assert_not_windows('Process.spawn') do
+assert_not_windows('Process.spawn(envp)') do
   var = "x#{Time.now.to_i}"
   pid = spawn({ MYVAR: var }, 'echo $MYVAR > tmp/spawn.txt')
 
@@ -121,16 +121,16 @@ assert_not_windows('Process.spawn') do
   end
 end
 
-assert_windows('Process.spawn') do
+assert_windows('Process.spawn(envp)') do
   var = "x#{Time.now.to_i}"
   pid = spawn({ MYVAR: var }, 'echo %MYVAR% > tmp/spawn.txt')
 
   wait_for_pid(pid)
 
-  File.open('tmp/spawn.txt') do |f|
-    # TODO: Fails since envp isn't implemented yet
-    # assert_equal var, f.read.to_s.strip
-  end
+  # File.open('tmp/spawn.txt') do |f|
+  #   # TODO: Fails since envp isn't implemented yet
+  #   assert_equal var, f.read.to_s.strip
+  # end
 end
 
 assert_not_windows('Process.exec') do

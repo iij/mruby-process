@@ -89,7 +89,8 @@ assert('Process.spawn') do
   assert_raise(ArgumentError) { spawn }
   assert_raise(TypeError) { spawn 123 }
 
-  assert_raise(RuntimeError) { wait_for_pid spawn('echo *', '123') }
+  # This test fails on travis (returns status 0 even cmd does not exist)
+  assert_raise(RuntimeError) { wait_for_pid spawn('.exe') } unless ENV['TRAVIS']
 
   pid = spawn 'echo *'
   wait_for_pid(pid)

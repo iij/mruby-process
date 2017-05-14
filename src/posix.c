@@ -59,7 +59,6 @@ pid_t
 spawnv(const char *path, char *const argv[])
 {
     pid_t pid;
-    int status;
 
     if (posix_spawn(&pid, path, NULL, NULL, argv, NULL) != 0)
         return -1;

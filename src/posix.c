@@ -55,50 +55,25 @@ mrb_progname(mrb_state *mrb)
     return mrb_str_new_cstr(mrb, progname);
 }
 
-// int
-// spawnv(pid_t *pid, const char *path, char *const argv[])
-// {
-//   int status;
-//   status = posix_spawn(pid, path, NULL, NULL, argv, NULL);
-//   if (status == 0) {
-//       printf("Child pid: %i\n", *pid);
-//       if (waitpid(*pid, &status, 0) != -1) {
-//           printf("Child exited with status %i\n", status);
-//       } else {
-//           perror("waitpid");
-//       }
-//   } else {
-//       printf("posix_spawn: %s\n", strerror(status));
-//   }
-//     return status;
-// }
-//
-// int
-// spawnve(pid_t *pid, const char * path, char *const argv[], char *const envp[])
-// {
-//   int status;
-//   status = posix_spawn(pid, path, NULL, NULL, argv, envp);
-//   if (status == 0) {
-//       printf("Child pid: %i\n", *pid);
-//       if (waitpid(*pid, &status, 0) != -1) {
-//           printf("Child exited with status %i\n", status);
-//       } else {
-//           perror("waitpid");
-//       }
-//   } else {
-//       printf("posix_spawn: %s\n", strerror(status));
-//   }
-//     return status;
-// }
-
 pid_t
-spawnv(const char *shell, char *const argv[])
+spawnv(const char *path, char *const argv[])
 {
-    return 1;
+    pid_t pid;
+    int status;
+
+    if (posix_spawn(&pid, path, NULL, NULL, argv, NULL) != 0)
+        return -1;
+
+    return pid;
 }
 
 pid_t
-spawnve(const char *shell, char *const argv[], char *const envp[])
+spawnve(const char *path, char *const argv[], char *const envp[])
 {
-    return 1;
+    pid_t pid;
+
+    if (posix_spawn(&pid, path, NULL, NULL, argv, envp) != 0)
+        return -1;
+
+    return pid;
 }

@@ -85,7 +85,7 @@ assert('Process.ppid') do
   assert_true Process.pid > 0
 end
 
-assert_windows('Process.spawn') do
+assert('Process.spawn') do
   assert_raise(ArgumentError) { spawn }
   assert_raise(TypeError) { spawn 123 }
 
@@ -101,21 +101,34 @@ assert_windows('Process.spawn') do
   assert_equal $?.pid, pid
 
   var = Time.now.to_i.to_s
-  pid = spawn("echo #{var}>tmp/spawn.txt")
+  pid = spawn("echo #{var} > tmp/spawn.txt")
 
   wait_for_pid(pid)
 
   File.open('tmp/spawn.txt') do |f|
-    assert_equal var, f.read.chomp
+    assert_equal var, f.read.to_s.strip
   end
+end
 
-  var = "x#{var}"
-  pid = spawn({ MYVAR: var }, 'echo %MYVAR%>tmp/spawn.txt')
+assert_not_windows('Process.spawn') do
+  var = "x#{Time.now.to_i}"
+  pid = spawn({ MYVAR: var }, 'echo $MYVAR > tmp/spawn.txt')
 
   wait_for_pid(pid)
 
   File.open('tmp/spawn.txt') do |f|
-    assert_equal var, f.read.chomp
+    assert_equal var, f.read.to_s.strip
+  end
+end
+
+assert_windows('Process.spawn') do
+  var = "x#{Time.now.to_i}"
+  pid = spawn({ MYVAR: var }, 'echo %MYVAR% > tmp/spawn.txt')
+
+  wait_for_pid(pid)
+
+  File.open('tmp/spawn.txt') do |f|
+    assert_equal var, f.read.to_s.strip
   end
 end
 
@@ -127,21 +140,21 @@ assert_not_windows('Process.exec') do
   assert_raise(RuntimeError) { exec '' }
 
   var = Time.now.to_i.to_s
-  pid = fork { exec({ MYVAR: var }, 'echo $MYVAR>tmp/exec.txt') }
+  pid = fork { exec({ MYVAR: var }, 'echo $MYVAR > tmp/exec.txt') }
 
   wait_for_pid(pid)
 
   File.open('tmp/exec.txt') do |f|
-    assert_equal var, f.read.chomp
+    assert_equal var, f.read.to_s.strip
   end
 
   var = "x#{var}"
-  pid = fork { exec '/bin/sh', '-c', "echo #{var}>tmp/exec.txt" }
+  pid = fork { exec '/bin/sh', '-c', "echo #{var} > tmp/exec.txt" }
 
   wait_for_pid(pid)
 
   File.open('tmp/exec.txt') do |f|
-    assert_equal var, f.read.chomp
+    assert_equal var, f.read.to_s.strip
   end
 end
 
@@ -154,7 +167,7 @@ assert_not_windows('Process.exec /shell') do
     wait_for_pid(pid)
 
     File.open('tmp/exec.txt') do |f|
-      assert_equal shell, f.read.chomp
+      assert_equal shell, f.read.to_s.strip
     end
   end
 end

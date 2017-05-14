@@ -50,7 +50,6 @@ static struct ChildRecord *FindFreeChildSlot(void);
 static void CloseChildHandle(struct ChildRecord *child);
 static struct ChildRecord *CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa, HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags);
 static pid_t child_result(struct ChildRecord *child, int mode);
-static int check_spawn_mode(int mode);
 static char* argv_to_str(char* const* argv);
 static WCHAR* str_to_wstr(const char *utf8, int mlen);
 
@@ -263,14 +262,14 @@ kill(pid_t pid, int sig)
 }
 
 pid_t
-spawnve(int mode, const char *shell, char *const argv[], char *const envp[])
+spawnve(const char *shell, char *const argv[], char *const envp[])
 {
     // TODO: envp
-    return spawnv(mode, shell, argv);
+    return spawnv(shell, argv);
 }
 
 pid_t
-spawnv(int mode, const char *shell, char *const argv[])
+spawnv(const char *shell, char *const argv[])
 {
     WCHAR *wcmd, *wshell;
     pid_t ret = -1;
@@ -280,13 +279,10 @@ spawnv(int mode, const char *shell, char *const argv[])
     strcpy(tCmd,cmd);
     strcpy(tShell,shell);
 
-    if (check_spawn_mode(mode))
-        return -1;
-
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(tCmd, strlen(tCmd));
 
-    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), mode);
+    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), _P_NOWAIT);
 
     free(wshell);
     free(wcmd);
@@ -489,18 +485,6 @@ CloseChildHandle(struct ChildRecord *child)
     child->pid      = 0;
 
     CloseHandle(h);
-}
-
-static int
-check_spawn_mode(int mode)
-{
-    switch (mode) {
-        case P_NOWAIT:
-        case P_OVERLAY:
-           return 0;
-        default:
-           return -1;
-    }
 }
 
 static char*

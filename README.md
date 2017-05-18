@@ -21,6 +21,123 @@ end
      your script or other mrbgems.
  - Kernel - $$ exit exit! fork sleep system
 
+ ## Implemented methods
+
+### Process
+ - https://ruby-doc.org/core-2.2.0/Process.html
+
+| method                     | mruby-process |
+| -------------------------  | ------------- |
+| Process.abort              |       o       |
+| Process.argv0              |       o       |
+| Process.clock_getres       |               |
+| Process.clock_gettime      |               |
+| Process.daemon             |               |
+| Process.detach             |               |
+| Process.egid               |               |
+| Process.egid=              |               |
+| Process.euid               |               |
+| Process.euid=              |               |
+| Process.exec               |       o       |
+| Process.exit               |       o       |
+| Process.exit!              |       o       |
+| Process.fork               |       o       |
+| Process.getpgid            |               |
+| Process.getpgrp            |               |
+| Process.getpriority        |               |
+| Process.getrlimit          |               |
+| Process.getsid             |               |
+| Process.gid                |               |
+| Process.gid=               |               |
+| Process.groups             |               |
+| Process.groups=            |               |
+| Process.initgroups         |               |
+| Process.kill               |       o       |
+| Process.maxgroups          |               |
+| Process.maxgroups=         |               |
+| Process.pid                |       o       |
+| Process.ppid               |       o       |
+| Process.setpgid            |               |
+| Process.setpgrp            |               |
+| Process.setpriority        |               |
+| Process.setproctitle       |               |
+| Process.setrlimit          |               |
+| Process.setsid             |               |
+| Process.spawn              |       o       |
+| Process.times              |               |
+| Process.uid                |               |
+| Process.uid=               |               |
+| Process.wait               |       o       |
+| Process.wait2              |       o       |
+| Process.waitall            |       o       |
+| Process.waitpid            |       o       |
+| Process.waitpid2           |       o       |
+
+     
+### Kernel
+
+  - https://ruby-doc.org/core-2.4.1/Kernel.html
+
+| method                     | mruby-process |
+| -------------------------  | ------------- |
+|\#`                         |               |
+|\#abort                     |       o       |
+|\#at_exit                   |               |
+|\#autoload                  |               |
+|\#autoload?                 |               |
+|\#binding                   |               |
+|\#block_given?              |               |
+|\#callcc                    |               |
+|\#caller                    |               |
+|\#caller_locations          |               |
+|\#catch                     |               |
+|\#chomp                     |               |
+|\#chop                      |               |
+|\#eval                      |               |
+|\#exec                      |       o       |
+|\#exit                      |       o       |
+|\#exit!                     |       o       |
+|\#fail                      |               |
+|\#fork                      |               |
+|\#format                    |               |
+|\#gets                      |               |
+|\#global_variables          |               |
+|\#gsub                      |               |
+|\#iterator?                 |               |
+|\#lambda                    |               |
+|\#load                      |               |
+|\#local_variables           |               |
+|\#loop                      |               |
+|\#open                      |               |
+|\#p                         |               |
+|\#print                     |               |
+|\#printf                    |               |
+|\#proc                      |               |
+|\#putc                      |               |
+|\#puts                      |               |
+|\#raise                     |               |
+|\#rand                      |               |
+|\#readline                  |               |
+|\#readlines                 |               |
+|\#require                   |               |
+|\#require_relative          |               |
+|\#select                    |               |
+|\#set_trace_func            |               |
+|\#sleep                     |               |
+|\#spawn                     |       o       |
+|\#sprintf                   |               |
+|\#srand                     |               |
+|\#sub                       |               |
+|\#syscall                   |               |
+|\#system                    |               |
+|\#test                      |               |
+|\#throw                     |               |
+|\#trace_var                 |               |
+|\#trap                      |               |
+|\#untrace_var               |               |
+|\#warn                      |               |
+
+
 
 ## Caveats
 

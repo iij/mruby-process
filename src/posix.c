@@ -67,7 +67,7 @@ spawnv(const char *path, char *const argv[])
 }
 
 pid_t
-spawnve(const char *path, char *const argv[], char *const envp[])
+spawnve(const char *path, char *const argv[], char *const envp[], int envc)
 {
     pid_t pid;
 

@@ -85,6 +85,8 @@ assert('Process.ppid') do
   assert_true Process.pid > 0
 end
 
+
+
 assert('Process.spawn') do
   assert_raise(ArgumentError) { spawn }
   assert_raise(TypeError) { spawn 123 }
@@ -128,10 +130,9 @@ assert_windows('Process.spawn(envp)') do
 
   wait_for_pid(pid)
 
-  # File.open('tmp/spawn.txt') do |f|
-  #   # TODO: Fails since envp isn't implemented yet
-  #   assert_equal var, f.read.to_s.strip
-  # end
+  File.open('tmp/spawn.txt') do |f|
+    assert_equal var, f.read.to_s.strip
+  end
 end
 
 assert_not_windows('Process.exec') do

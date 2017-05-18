@@ -30,6 +30,7 @@
 
 typedef struct mrb_execarg {
     char **envp;
+    int envc;
     char *filename;
     char **argv;
     int argc;
@@ -124,6 +125,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
     }
 
     eargp->envp     = NULL;
+    eargp->envc     = -1;
     eargp->filename = result[0];
     eargp->argv     = result;
     eargp->argc     = argc;
@@ -155,6 +157,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
 
         envp[i]     = NULL;
         eargp->envp = envp;
+        eargp->envc = len ;
     }
 
     mrb_gc_arena_restore(mrb, ai);

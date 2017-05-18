@@ -26,6 +26,12 @@
 #include <windows.h>
 #include <process.h>
 
+#include <tchar.h>
+#include <stdio.h>
+//#include <strsafe.h>
+
+#define BUFSIZE 4096
+
 #define MAXCHILDNUM 256 /* max num of child processes */
 
 #ifndef P_OVERLAY
@@ -54,7 +60,7 @@ static struct ChildRecord *FindChildSlot(pid_t pid);
 static struct ChildRecord *FindChildSlotByHandle(HANDLE h);
 static struct ChildRecord *FindFreeChildSlot(void);
 static void CloseChildHandle(struct ChildRecord *child);
-static struct ChildRecord *CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa, HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags);
+static struct ChildRecord *CreateChild(const WCHAR *cmd, const WCHAR *prog, SECURITY_ATTRIBUTES *psa, HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags, LPVOID environment);
 static pid_t child_result(struct ChildRecord *child, int mode);
 static char* argv_to_str(char* const* argv);
 static WCHAR* str_to_wstr(const char *utf8, int mlen);
@@ -267,11 +273,76 @@ kill(pid_t pid, int sig)
     return ret;
 }
 
-pid_t
-spawnve(const char *shell, char *const argv[], char *const envp[])
+void PrintStringArray( char *s[], size_t n )
 {
-    // TODO: envp
-    return spawnv(shell, argv);
+    for ( char **p = s; p < s + n; ++p )
+    {
+        puts( *p );
+    }
+    printf( "\n" );
+}
+
+
+pid_t
+spawnve(const char *shell, char *const argv[], char *const envp[], int envc)
+{
+
+  LPTSTR lpszCurrentVariable;
+
+  TCHAR chNewEnv[BUFSIZE];
+
+  // DWORD dwFlags=0;
+  // TCHAR szAppName[]=TEXT("ex3.exe");
+  // STARTUPINFO si;
+  // PROCESS_INFORMATION pi;
+  // BOOL fSuccess;
+
+
+
+  lpszCurrentVariable = (LPTSTR) chNewEnv;
+  for ( char **p = envp; p < envp + envc; ++p )
+  {
+    if (FAILED(strcpy(lpszCurrentVariable, TEXT(*p))))
+      {
+        printf("env-string copy failed\n");
+        return FALSE;
+      }
+
+    lpszCurrentVariable += lstrlen(lpszCurrentVariable) + 1;
+  }
+
+  // Terminate the block with a NULL byte.
+
+  *lpszCurrentVariable = (TCHAR)0;
+
+  // Create the child process, specifying a new environment block.
+
+  // SecureZeroMemory(&si, sizeof(STARTUPINFO));
+  // si.cb = sizeof(STARTUPINFO);
+  //  TODO eventuell relevant für environment?
+  // #ifdef UNICODE
+  // dwFlags = CREATE_UNICODE_ENVIRONMENT;
+  // #endif
+
+
+  WCHAR *wcmd, *wshell;
+  pid_t ret = -1;
+  char *cmd = argv_to_str(argv);
+  char tCmd[strlen(cmd)];
+  char tShell[strlen(shell)];
+  strcpy(tCmd,cmd);
+  strcpy(tShell,shell);
+
+  wshell = str_to_wstr(tShell, strlen(tShell));
+  wcmd   = str_to_wstr(tCmd, strlen(tCmd));
+
+  ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0, (LPVOID) chNewEnv), P_NOWAIT);
+
+  free(wshell);
+  free(wcmd);
+  free(cmd);
+
+  return ret;
 }
 
 pid_t
@@ -288,7 +359,7 @@ spawnv(const char *shell, char *const argv[])
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(tCmd, strlen(tCmd));
 
-    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0), P_NOWAIT);
+    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0, NULL), P_NOWAIT);
 
     free(wshell);
     free(wcmd);
@@ -322,7 +393,7 @@ get_proc_address(const char *module, const char *func, HANDLE *mh)
 
 static struct ChildRecord *
 CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
-        HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags)
+        HANDLE hInput, HANDLE hOutput, HANDLE hError, DWORD dwCreationFlags, LPVOID env)
 {
     BOOL fRet;
     STARTUPINFOW aStartupInfo;
@@ -380,7 +451,7 @@ CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
     }
 
     fRet = CreateProcessW(shell, (WCHAR*) cmd, psa, psa,
-                          psa->bInheritHandle, dwCreationFlags, NULL, NULL,
+                          psa->bInheritHandle, dwCreationFlags, env, NULL,
                           &aStartupInfo, &aProcessInformation);
 
     if (!fRet) {

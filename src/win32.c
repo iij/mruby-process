@@ -291,12 +291,11 @@ spawnve(const char *shell, char *const argv[], char *const envp[], int envc)
 
   TCHAR chNewEnv[BUFSIZE];
 
-  // DWORD dwFlags=0;
-  // TCHAR szAppName[]=TEXT("ex3.exe");
-  // STARTUPINFO si;
-  // PROCESS_INFORMATION pi;
-  // BOOL fSuccess;
+  HANDLE input, output, error;
 
+  input = GetStdHandle(STD_INPUT_HANDLE);
+  output = GetStdHandle(STD_OUTPUT_HANDLE);
+  error = GetStdHandle(STD_ERROR_HANDLE);
 
 
   lpszCurrentVariable = (LPTSTR) chNewEnv;
@@ -336,7 +335,7 @@ spawnve(const char *shell, char *const argv[], char *const envp[], int envc)
   wshell = str_to_wstr(tShell, strlen(tShell));
   wcmd   = str_to_wstr(tCmd, strlen(tCmd));
 
-  ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0, (LPVOID) chNewEnv), P_NOWAIT);
+  ret = child_result(CreateChild(wshell, wcmd, NULL, input, output, error, 0, (LPVOID) chNewEnv), P_NOWAIT);
 
   free(wshell);
   free(wcmd);
@@ -355,11 +354,18 @@ spawnv(const char *shell, char *const argv[])
     char tShell[strlen(shell)];
     strcpy(tCmd,cmd);
     strcpy(tShell,shell);
+    HANDLE input, output, error;
+
+    input = GetStdHandle(STD_INPUT_HANDLE);
+    output = GetStdHandle(STD_OUTPUT_HANDLE);
+    error = GetStdHandle(STD_ERROR_HANDLE);
+
+
 
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(tCmd, strlen(tCmd));
 
-    ret = child_result(CreateChild(wshell, wcmd, NULL, NULL, NULL, NULL, 0, NULL), P_NOWAIT);
+    ret = child_result(CreateChild(wshell, wcmd, NULL, input, output, error, 0, NULL), P_NOWAIT);
 
     free(wshell);
     free(wcmd);

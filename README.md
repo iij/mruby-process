@@ -24,7 +24,7 @@ end
  ## Implemented methods
 
 ### Process
- - https://ruby-doc.org/core-2.2.0/Process.html
+ - https://ruby-doc.org/core-2.4.1/Process.html
 
 | method                     | mruby-process |
 | -------------------------  | :-----------: |

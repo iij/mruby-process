@@ -26,52 +26,52 @@ end
 ### Process
  - https://ruby-doc.org/core-2.4.1/Process.html
 
-| method                     | mruby-process |
-| -------------------------  | :-----------: |
-| Process.abort              |       o       |
-| Process.argv0              |       o       |
-| Process.clock_getres       |               |
-| Process.clock_gettime      |               |
-| Process.daemon             |               |
-| Process.detach             |               |
-| Process.egid               |               |
-| Process.egid=              |               |
-| Process.euid               |               |
-| Process.euid=              |               |
-| Process.exec               |       o       |
-| Process.exit               |       o       |
-| Process.exit!              |       o       |
-| Process.fork               |       o       |
-| Process.getpgid            |               |
-| Process.getpgrp            |               |
-| Process.getpriority        |               |
-| Process.getrlimit          |               |
-| Process.getsid             |               |
-| Process.gid                |               |
-| Process.gid=               |               |
-| Process.groups             |               |
-| Process.groups=            |               |
-| Process.initgroups         |               |
-| Process.kill               |       o       |
-| Process.maxgroups          |               |
-| Process.maxgroups=         |               |
-| Process.pid                |       o       |
-| Process.ppid               |       o       |
-| Process.setpgid            |               |
-| Process.setpgrp            |               |
-| Process.setpriority        |               |
-| Process.setproctitle       |               |
-| Process.setrlimit          |               |
-| Process.setsid             |               |
-| Process.spawn              |       o       |
-| Process.times              |               |
-| Process.uid                |               |
-| Process.uid=               |               |
-| Process.wait               |       o       |
-| Process.wait2              |       o       |
-| Process.waitall            |       o       |
-| Process.waitpid            |       o       |
-| Process.waitpid2           |       o       |
+| method                     | mruby-process | Comment                                         |
+| -------------------------  | :-----------: | :---------------------:                         |
+| Process.abort              |       o       |                                                 |
+| Process.argv0              |       o       |                                                 |
+| Process.clock_getres       |               |                                                 |
+| Process.clock_gettime      |               |                                                 |
+| Process.daemon             |               |                                                 |
+| Process.detach             |               |                                                 |
+| Process.egid               |               | Implemented in [mruby-process-ext](https://github.com/ksss/mruby-process-ext) |
+| Process.egid=              |               |                                                 |
+| Process.euid               |               | Implemented in [mruby-process-ext](https://github.com/ksss/mruby-process-ext) |
+| Process.euid=              |               |                                                 |
+| Process.exec               |       o       |                                                 |
+| Process.exit               |       o       |                                                 |
+| Process.exit!              |       o       |                                                 |
+| Process.fork               |       o       | Only available in posix                         |
+| Process.getpgid            |               |                                                 |
+| Process.getpgrp            |               |                                                 |
+| Process.getpriority        |               |                                                 |
+| Process.getrlimit          |               |                                                 |
+| Process.getsid             |               |                                                 |
+| Process.gid                |               | Implemented in [mruby-process-ext](https://github.com/ksss/mruby-process-ext) |
+| Process.gid=               |               |                                                 |
+| Process.groups             |               |                                                 |
+| Process.groups=            |               |                                                 |
+| Process.initgroups         |               |                                                 |
+| Process.kill               |       o       |                                                 |
+| Process.maxgroups          |               |                                                 |
+| Process.maxgroups=         |               |                                                 |
+| Process.pid                |       o       |                                                 |
+| Process.ppid               |       o       |                                                 |
+| Process.setpgid            |               |                                                 |
+| Process.setpgrp            |               |                                                 |
+| Process.setpriority        |               |                                                 |
+| Process.setproctitle       |               |                                                 |
+| Process.setrlimit          |               |                                                 |
+| Process.setsid             |               |                                                 |
+| Process.spawn              |       o       |                                                 |
+| Process.times              |               |                                                 |
+| Process.uid                |               | Implemented in [mruby-process-ext](https://github.com/ksss/mruby-process-ext) |
+| Process.uid=               |               | Implemented in [mruby-process-ext](https://github.com/ksss/mruby-process-ext) |
+| Process.wait               |       o       |                                                 |
+| Process.wait2              |       o       |                                                 |
+| Process.waitall            |       o       |                                                 |
+| Process.waitpid            |       o       |                                                 |
+| Process.waitpid2           |       o       |                                                 |
 
      
 ### Kernel
@@ -80,63 +80,35 @@ end
 
 | method                     | mruby-process |
 | -------------------------  | :-----------: |
-|\#`                         |               |
 |\#abort                     |       o       |
-|\#at_exit                   |               |
-|\#autoload                  |               |
-|\#autoload?                 |               |
-|\#binding                   |               |
-|\#block_given?              |               |
-|\#callcc                    |               |
-|\#caller                    |               |
-|\#caller_locations          |               |
-|\#catch                     |               |
-|\#chomp                     |               |
-|\#chop                      |               |
-|\#eval                      |               |
 |\#exec                      |       o       |
 |\#exit                      |       o       |
 |\#exit!                     |       o       |
-|\#fail                      |               |
-|\#fork                      |               |
-|\#format                    |               |
-|\#gets                      |               |
-|\#global_variables          |               |
-|\#gsub                      |               |
-|\#iterator?                 |               |
-|\#lambda                    |               |
-|\#load                      |               |
-|\#local_variables           |               |
-|\#loop                      |               |
-|\#open                      |               |
-|\#p                         |               |
-|\#print                     |               |
-|\#printf                    |               |
-|\#proc                      |               |
-|\#putc                      |               |
-|\#puts                      |               |
-|\#raise                     |               |
-|\#rand                      |               |
-|\#readline                  |               |
-|\#readlines                 |               |
-|\#require                   |               |
-|\#require_relative          |               |
-|\#select                    |               |
-|\#set_trace_func            |               |
-|\#sleep                     |               |
 |\#spawn                     |       o       |
-|\#sprintf                   |               |
-|\#srand                     |               |
-|\#sub                       |               |
-|\#syscall                   |               |
-|\#system                    |               |
-|\#test                      |               |
-|\#throw                     |               |
-|\#trace_var                 |               |
-|\#trap                      |               |
-|\#untrace_var               |               |
-|\#warn                      |               |
 
+### Signal
+
+  - https://ruby-doc.org/core-2.4.1/Signal.html
+
+| method                     | mruby-process |
+| -------------------------  | :-----------: |
+| Signal.signame             |       o       |
+| Signal.list                |       o       |
+
+
+### Status
+
+  - https://ruby-doc.org/core-2.4.1/Process/Status.html
+
+| method                     | mruby-process |
+| -------------------------  | :-----------: |
+| Status.coredump?           |       o       |
+| Status.exited?             |       o       |
+| Status.exitstatus          |       o       |
+| Status.signaled?           |       o       |
+| Status.stopped?            |       o       |
+| Status.stopsig             |       o       |
+| Status.termsig             |       o       |
 
 
 ## Caveats

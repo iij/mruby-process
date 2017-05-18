@@ -27,7 +27,7 @@ end
  - https://ruby-doc.org/core-2.2.0/Process.html
 
 | method                     | mruby-process |
-| -------------------------  | ------------- |
+| -------------------------  | :-----------: |
 | Process.abort              |       o       |
 | Process.argv0              |       o       |
 | Process.clock_getres       |               |
@@ -79,7 +79,7 @@ end
   - https://ruby-doc.org/core-2.4.1/Kernel.html
 
 | method                     | mruby-process |
-| -------------------------  | ------------- |
+| -------------------------  | :-----------: |
 |\#`                         |               |
 |\#abort                     |       o       |
 |\#at_exit                   |               |

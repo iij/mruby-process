@@ -284,7 +284,7 @@ void PrintStringArray( char *s[], size_t n )
 
 
 pid_t
-spawnve(const char *shell, char *const argv[], char *const envp[], int envc)
+spawnve(const char *shell, char *const argv[], char *const envp[])
 {
 
   LPTSTR lpszCurrentVariable;
@@ -299,16 +299,24 @@ spawnve(const char *shell, char *const argv[], char *const envp[], int envc)
 
 
   lpszCurrentVariable = (LPTSTR) chNewEnv;
-  for ( char **p = envp; p < envp + envc; ++p )
-  {
-    if (FAILED(strcpy(lpszCurrentVariable, TEXT(*p))))
+
+  int i = 0;
+  char* env = envp[i];
+
+  while (env != NULL) {
+    if (FAILED(strcpy(lpszCurrentVariable, TEXT(env))))
       {
         printf("env-string copy failed\n");
         return FALSE;
       }
 
-    lpszCurrentVariable += lstrlen(lpszCurrentVariable) + 1;
+      lpszCurrentVariable += lstrlen(lpszCurrentVariable) + 1;
+
+      i++;
+      env = envp[i];
   }
+
+
 
   // Terminate the block with a NULL byte.
 

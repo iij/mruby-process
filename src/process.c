@@ -229,12 +229,16 @@ mrb_f_waitall(mrb_state *mrb, mrb_value klass)
 
   for (pid = -1;;) {
     pid = mrb_waitpid(-1, &status, 0);
+    printf("pid is %d \n",pid);
 
     if (pid == -1) {
       int e = errno;
 
-      if (e == ECHILD)
-        break;
+    printf("error is %d \n", e);
+    printf("ECHILD is %d \n", ECHILD);
+
+    if (e == ECHILD)
+      break;
 
       mrb_sys_fail(mrb, "waitall failed");
     }
@@ -321,7 +325,7 @@ mrb_f_spawn(mrb_state *mrb, mrb_value klass)
   eargp = mrb_execarg_new(mrb);
 
   if (eargp->envp)
-    pid = spawnve(eargp->filename, eargp->argv, eargp->envp, eargp->envc);
+    pid = spawnve(eargp->filename, eargp->argv, eargp->envp);
   else
     pid = spawnv(eargp->filename, eargp->argv);
 

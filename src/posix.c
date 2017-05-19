@@ -75,7 +75,7 @@ spawnv(const char *path, char *const argv[])
 }
 
 pid_t
-spawnve(const char *path, char *const argv[], char *const envp[], int envc)
+spawnve(const char *path, char *const argv[], char *const envp[])
 {
   posix_spawn_file_actions_t action;
   posix_spawn_file_actions_init(&action);

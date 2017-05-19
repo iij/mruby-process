@@ -187,7 +187,7 @@ assert('Process.kill') do
 end
 
 assert_not_windows('Process.wait2') do
-  pid  = fork { loop {} }
+  pid  = spawn('yes > tmp/wait2.txt')
   p, s = Process.waitpid2(pid, Process::WNOHANG)
 
   assert_nil(p)
@@ -206,7 +206,7 @@ assert_not_windows('Process.wait2') do
 end
 
 assert_windows('Process.wait2 ') do
-  pid  = spawn('yes > tmp/spawn.txt')
+  pid  = spawn('yes > tmp/wait2.txt')
   p, s = Process.waitpid2(pid, Process::WNOHANG)
 
   assert_nil(p)
@@ -228,12 +228,12 @@ assert_not_windows('Process.waitall') do
   assert_true Process.waitall.empty?
 
   pids = []
-  pids << fork { exit! 2 }
-  pids << fork { exit! 1 }
-  pids << fork { exit! 0 }
   # pids << fork { exit! 2 }
   # pids << fork { exit! 1 }
   # pids << fork { exit! 0 }
+  pids << spawn("echo test1 > tmp/waitall1.txt")
+  pids << spawn("echo test2 > tmp/waitall1.txt")
+  pids << spawn("echo test3 > tmp/waitall1.txt")
 
   # TODO: funktioniert auch mti spawn unter Windows nicht. Errorcode ist nicht, wie in waitall erwartet ECHILD(10) sondern  EACCES  13  /* Permission denied */
 

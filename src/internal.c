@@ -49,7 +49,6 @@ mrb_execarg_new(mrb_state *mrb)
 
     switch (mrb_type(env)) {
         case MRB_TT_HASH:
-            mrb_get_args(mrb, "H|*", &env, &argv, &argc);
             break;
 
         case MRB_TT_STRING:

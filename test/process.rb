@@ -18,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# rubocop:disable Style/DoubleNegation
+
 def wait_for_pid(pid)
   loop do
     p = Process.waitpid(pid, Process::WNOHANG)
@@ -84,8 +86,6 @@ assert('Process.ppid') do
   assert_kind_of Integer, Process.pid
   assert_true Process.pid > 0
 end
-
-
 
 assert('Process.spawn') do
   assert_raise(ArgumentError) { spawn }
@@ -254,6 +254,14 @@ assert_not_windows('Process.waitall') do
     assert_equal pid, pid_status.first
     assert_kind_of Process::Status, pid_status.last
   end
+end
+
+assert('Process.system') do
+  assert_true  system 'exit 0'
+  assert_equal 0, $?.exitstatus
+  assert_false system 'exit 1'
+  assert_equal 1, $?.exitstatus
+  assert_false !!system('exitz')
 end
 
 assert_windows('Process.fork') do

@@ -30,9 +30,15 @@
 #include "status.c"
 #include "signal.c"
 
-static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
-static int mrb_waitpid(int pid, int *st, int flags);
-static void mrb_process_set_pid_gv(mrb_state *mrb);
+static void
+mrb_process_set_pid_gv(mrb_state *mrb)
+{
+  mrb_value pid = mrb_fixnum_value((mrb_int)getpid());
+
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"),          pid);
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$PID"),        pid);
+  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$PROCESS_ID"), pid);
+}
 
 static mrb_value
 mrb_proc_argv0(mrb_state *mrb, mrb_value klass)
@@ -47,34 +53,7 @@ mrb_proc_progname(mrb_state *mrb)
 }
 
 static mrb_value
-mrb_f_abort(mrb_state *mrb, mrb_value klass)
-{
-  mrb_value error;
-  int n;
-
-  n = mrb_get_args(mrb, "|S", &error);
-
-  if (n != 0) {
-    fprintf(stderr, "%s\n", mrb_str_to_cstr(mrb, error));
-  }
-
-  return mrb_f_exit_common(mrb, 1);
-}
-
-static mrb_value
-mrb_f_exit(mrb_state *mrb, mrb_value klass)
-{
-  return mrb_f_exit_common(mrb, 0);
-}
-
-static mrb_value
-mrb_f_exit_bang(mrb_state *mrb, mrb_value klass)
-{
-  return mrb_f_exit_common(mrb, 1);
-}
-
-static mrb_value
-mrb_f_exit_common(mrb_state *mrb, int bang)
+mrb_exit_common(mrb_state *mrb, int bang)
 {
   mrb_value status;
   int istatus, n;
@@ -106,6 +85,33 @@ mrb_f_exit_common(mrb_state *mrb, int bang)
 
   /* maybe not reached */
   return mrb_nil_value();
+}
+
+static mrb_value
+mrb_f_abort(mrb_state *mrb, mrb_value klass)
+{
+  mrb_value error;
+  int n;
+
+  n = mrb_get_args(mrb, "|S", &error);
+
+  if (n != 0) {
+    fprintf(stderr, "%s\n", mrb_str_to_cstr(mrb, error));
+  }
+
+  return mrb_exit_common(mrb, 1);
+}
+
+static mrb_value
+mrb_f_exit(mrb_state *mrb, mrb_value klass)
+{
+  return mrb_exit_common(mrb, 0);
+}
+
+static mrb_value
+mrb_f_exit_bang(mrb_state *mrb, mrb_value klass)
+{
+  return mrb_exit_common(mrb, 1);
 }
 
 static mrb_value
@@ -185,6 +191,23 @@ mrb_f_kill(mrb_state *mrb, mrb_value klass)
   return mrb_fixnum_value(sent);
 }
 
+static pid_t
+mrb_waitpid(int pid, int *st, int flags)
+{
+  pid_t result;
+
+retry:
+  result = waitpid(pid, st, flags);
+  if (result < 0) {
+    if (errno == EINTR) {
+      goto retry;
+    }
+    return -1;
+  }
+
+  return result;
+}
+
 static mrb_value
 mrb_f_wait(mrb_state *mrb, mrb_value klass)
 {
@@ -255,23 +278,6 @@ mrb_f_waitall(mrb_state *mrb, mrb_value klass)
   return result;
 }
 
-static int
-mrb_waitpid(int pid, int *st, int flags)
-{
-  int result;
-
-retry:
-  result = waitpid(pid, st, flags);
-  if (result < 0) {
-    if (errno == EINTR) {
-      goto retry;
-    }
-    return -1;
-  }
-
-  return result;
-}
-
 static mrb_value
 mrb_f_fork(mrb_state *mrb, mrb_value klass)
 {
@@ -316,8 +322,8 @@ mrb_f_exec(mrb_state *mrb, mrb_value klass)
   return mrb_nil_value();
 }
 
-static mrb_value
-mrb_f_spawn(mrb_state *mrb, mrb_value klass)
+static pid_t
+mrb_spawn_internal(mrb_state *mrb, mrb_value klass)
 {
   struct mrb_execarg *eargp;
   int pid;
@@ -331,20 +337,42 @@ mrb_f_spawn(mrb_state *mrb, mrb_value klass)
 
   free(eargp);
 
+  return pid;
+}
+
+static mrb_value
+mrb_f_spawn(mrb_state *mrb, mrb_value klass)
+{
+  int pid;
+  pid = mrb_spawn_internal(mrb, klass);
+
   if (pid == -1)
     mrb_sys_fail(mrb, "spawn failed");
 
   return mrb_fixnum_value(pid);
 }
 
-static void
-mrb_process_set_pid_gv(mrb_state *mrb)
+static mrb_value
+mrb_f_system(mrb_state *mrb, mrb_value klass)
 {
-  mrb_value pid = mrb_fixnum_value((mrb_int)getpid());
+  pid_t pid;
+  int status;
 
-  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"),          pid);
-  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$PID"),        pid);
-  mrb_gv_set(mrb, mrb_intern_lit(mrb, "$PROCESS_ID"), pid);
+  mrb_last_status_clear(mrb);
+
+  pid = mrb_spawn_internal(mrb, klass);
+
+  if (pid == -1)
+    return mrb_nil_value();
+
+  pid = mrb_waitpid(pid, &status, 0);
+
+  if (pid == -1)
+    mrb_sys_fail(mrb, "system failed");
+
+  mrb_last_status_set(mrb, pid, status);
+
+  return status == EXIT_SUCCESS ? mrb_true_value() : mrb_false_value();
 }
 
 void
@@ -353,11 +381,12 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
   struct RClass *p, *k;
 
   k = mrb->kernel_module;
-  mrb_define_method(mrb, k, "abort", mrb_f_abort, MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, k, "exit",  mrb_f_exit,  MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, k, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, k, "exec",  mrb_f_exec,  MRB_ARGS_REQ(1)|MRB_ARGS_REST());
-  mrb_define_method(mrb, k, "spawn", mrb_f_spawn, MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_method(mrb, k, "abort",  mrb_f_abort, MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, k, "exit",   mrb_f_exit,  MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, k, "exit!",  mrb_f_exit_bang, MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, k, "exec",   mrb_f_exec,  MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_method(mrb, k, "spawn",  mrb_f_spawn, MRB_ARGS_REQ(1)|MRB_ARGS_REST());
+  mrb_define_method(mrb, k, "system", mrb_f_system, MRB_ARGS_REQ(1)|MRB_ARGS_REST());
 
   p = mrb_define_module(mrb, "Process");
   mrb_define_class_method(mrb, p, "argv0",    mrb_proc_argv0, MRB_ARGS_NONE());

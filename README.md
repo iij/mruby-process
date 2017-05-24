@@ -145,7 +145,7 @@ end
 | #fork                      |       o       | If fork is not usable, Process.respond_to?(:fork) returns false. |
 | #sleep                     |               | Implemented in [mruby-sleep][mruby-sleep]. |
 | #spawn                     |       o       |
-| #system                    |               |
+| #system                    |       o       |
 
 
 ### Signal

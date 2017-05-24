@@ -18,7 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# rubocop:disable Style/DoubleNegation
+def read(path)
+  f = File.open(path)
+  f.read.to_s.strip
+ensure
+  f.close
+end
 
 def wait_for_pid(pid)
   loop do
@@ -27,12 +32,12 @@ def wait_for_pid(pid)
   end
 end
 
-def assert_not_windows(str, &block)
-  assert(str, &block) if OS.posix?
+def assert_not_windows(*args, &block)
+  assert(*args, &block) if OS.posix?
 end
 
-def assert_windows(str, &block)
-  assert(str, &block) if OS.windows?
+def assert_windows(*args, &block)
+  assert(*args, &block) if OS.windows?
 end
 
 assert('Process') do
@@ -107,71 +112,45 @@ assert('Process.spawn') do
   pid = spawn("echo #{var} > tmp/spawn.txt")
 
   wait_for_pid(pid)
-
-  File.open('tmp/spawn.txt') do |f|
-    assert_equal var, f.read.to_s.strip
-  end
+  assert_equal var, read('tmp/spawn.txt')
 end
 
-assert_not_windows('Process.spawn(envp)') do
+assert('Process.spawn', 'env') do
   var = "x#{Time.now.to_i}"
-  pid = spawn({ MYVAR: var }, 'echo $MYVAR > tmp/spawn.txt')
+  env = OS.posix? ? '$MYVAR' : '%MYVAR%'
+  pid = spawn({ MYVAR: var }, "echo #{env} > tmp/spawn.txt")
 
   wait_for_pid(pid)
-
-  File.open('tmp/spawn.txt') do |f|
-    assert_equal var, f.read.to_s.strip
-  end
+  assert_equal var, read('tmp/spawn.txt')
 end
 
-assert_windows('Process.spawn(envp)') do
-  var = "x#{Time.now.to_i}"
-  pid = spawn({ MYVAR: var }, 'echo %MYVAR% > tmp/spawn.txt')
-
-  wait_for_pid(pid)
-
-  File.open('tmp/spawn.txt') do |f|
-    assert_equal var, f.read.to_s.strip
-  end
+assert('Process.exec', 'invalid signatures') do
+  assert_raise(ArgumentError) { exec }
+  assert_raise(TypeError)     { exec 123 }
 end
 
 assert_not_windows('Process.exec') do
-  assert_raise(ArgumentError) { exec }
-  assert_raise(TypeError) { exec 123 }
-
-  assert_raise(RuntimeError) { exec 'echo *', '123' }
-  assert_raise(RuntimeError) { exec '' }
-
   var = Time.now.to_i.to_s
   pid = fork { exec({ MYVAR: var }, 'echo $MYVAR > tmp/exec.txt') }
 
   wait_for_pid(pid)
-
-  File.open('tmp/exec.txt') do |f|
-    assert_equal var, f.read.to_s.strip
-  end
+  assert_equal var, read('tmp/exec.txt')
 
   var = "x#{var}"
   pid = fork { exec '/bin/sh', '-c', "echo #{var} > tmp/exec.txt" }
 
   wait_for_pid(pid)
-
-  File.open('tmp/exec.txt') do |f|
-    assert_equal var, f.read.to_s.strip
-  end
+  assert_equal var, read('tmp/exec.txt')
 end
 
-assert_not_windows('Process.exec /shell') do
+assert_not_windows('Process.exec', '$SHELL') do
   ['/bin/bash', '/bin/sh'].each do |shell|
     ENV['SHELL'] = shell
 
     pid = fork { exec 'echo $SHELL>tmp/exec.txt' }
-
     wait_for_pid(pid)
 
-    File.open('tmp/exec.txt') do |f|
-      assert_equal shell, f.read.to_s.strip
-    end
+    assert_equal shell, read('tmp/exec.txt')
   end
 end
 
@@ -186,56 +165,32 @@ assert('Process.kill') do
   assert_raise(ArgumentError) { Process.kill(:UNKNOWN, Process.pid) }
 end
 
-assert_not_windows('Process.wait2') do
-  pid  = spawn('yes > tmp/wait2.txt')
-  p, s = Process.waitpid2(pid, Process::WNOHANG)
+assert('Process.wait2') do
+  pid     = spawn('sleep 2')
+  p, st   = Process.waitpid2(pid, Process::WNOHANG)
 
-  assert_nil(p)
-  assert_nil(s)
-
-  Process.kill :TERM, pid
-
-  loop do
-    p, s = Process.waitpid2(pid, Process::WNOHANG)
-    break if p
-  end
-
-  assert_equal(pid, p)
-  assert_kind_of(Process::Status, s)
-  assert_true(s.signaled?)
-end
-
-assert_windows('Process.wait2 ') do
-  pid  = spawn('yes > tmp/wait2.txt')
-  p, s = Process.waitpid2(pid, Process::WNOHANG)
-
-  assert_nil(p)
-  assert_nil(s)
+  assert_nil p
+  assert_nil st
 
   Process.kill :KILL, pid
 
   loop do
-    p, s = Process.waitpid2(pid, Process::WNOHANG)
+    p, st = Process.waitpid2(pid, Process::WNOHANG)
     break if p
   end
 
-  assert_equal(pid, p)
-  assert_kind_of(Process::Status, s)
-  # assert_true(s.signaled?)
+  assert_equal pid, p
+  assert_kind_of Process::Status, st
+  assert_include [9, nil], st.termsig
 end
 
-assert_not_windows('Process.waitall') do
+assert('Process.waitall') do
   assert_true Process.waitall.empty?
 
   pids = []
-  # pids << fork { exit! 2 }
-  # pids << fork { exit! 1 }
-  # pids << fork { exit! 0 }
-  pids << spawn("echo test1 > tmp/waitall1.txt")
-  pids << spawn("echo test2 > tmp/waitall1.txt")
-  pids << spawn("echo test3 > tmp/waitall1.txt")
-
-  # TODO: funktioniert auch mti spawn unter Windows nicht. Errorcode ist nicht, wie in waitall erwartet ECHILD(10) sondern  EACCES  13  /* Permission denied */
+  pids << spawn('exit 2')
+  pids << spawn('exit 1')
+  pids << spawn('exit 0')
 
   a = Process.waitall
 
@@ -257,11 +212,22 @@ assert_not_windows('Process.waitall') do
 end
 
 assert('Process.system') do
+  assert_raise(ArgumentError) { system }
+  assert_raise(TypeError)     { system 123 }
+
   assert_true  system 'exit 0'
   assert_equal 0, $?.exitstatus
   assert_false system 'exit 1'
   assert_equal 1, $?.exitstatus
-  assert_false !!system('exitz')
+
+  assert_nothing_raised { system 'exitz' }
+
+  var = Time.now.to_i.to_s
+  env = OS.posix? ? '$MYVAR' : '%MYVAR%'
+
+  system({ MYVAR: var }, "echo #{env} > tmp/system.txt")
+
+  assert_equal var, read('tmp/system.txt')
 end
 
 assert_windows('Process.fork') do

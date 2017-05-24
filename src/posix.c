@@ -58,37 +58,38 @@ mrb_progname(mrb_state *mrb)
 pid_t
 spawnv(const char *path, char *const argv[])
 {
-  posix_spawn_file_actions_t action;
-  posix_spawn_file_actions_init(&action);
-  posix_spawn_file_actions_adddup2 (&action, 0, 0);
-  posix_spawn_file_actions_adddup2 (&action, 1, 1);
-  posix_spawn_file_actions_adddup2 (&action, 2, 2);
+    pid_t pid;
+    posix_spawn_file_actions_t action;
 
-  pid_t pid;
+    posix_spawn_file_actions_init(&action);
+    posix_spawn_file_actions_adddup2 (&action, 0, 0);
+    posix_spawn_file_actions_adddup2 (&action, 1, 1);
+    posix_spawn_file_actions_adddup2 (&action, 2, 2);
 
-  if (posix_spawn(&pid, path, &action, NULL, argv, NULL) != 0)
-      return -1;
 
-  posix_spawn_file_actions_destroy(&action);
+    if (posix_spawn(&pid, path, &action, NULL, argv, NULL) != 0)
+        return -1;
 
-  return pid;
+    posix_spawn_file_actions_destroy(&action);
+
+    return pid;
 }
 
 pid_t
 spawnve(const char *path, char *const argv[], char *const envp[])
 {
-  posix_spawn_file_actions_t action;
-  posix_spawn_file_actions_init(&action);
-  posix_spawn_file_actions_adddup2 (&action, 0, 0);
-  posix_spawn_file_actions_adddup2 (&action, 1, 1);
-  posix_spawn_file_actions_adddup2 (&action, 2, 2);
+    pid_t pid;
+    posix_spawn_file_actions_t action;
 
-  pid_t pid;
+    posix_spawn_file_actions_init(&action);
+    posix_spawn_file_actions_adddup2 (&action, 0, 0);
+    posix_spawn_file_actions_adddup2 (&action, 1, 1);
+    posix_spawn_file_actions_adddup2 (&action, 2, 2);
 
-  if (posix_spawn(&pid, path, &action, NULL, argv, envp) != 0)
-      return -1;
+    if (posix_spawn(&pid, path, &action, NULL, argv, envp) != 0)
+        return -1;
 
-  posix_spawn_file_actions_destroy(&action);
-  
-  return pid;
+    posix_spawn_file_actions_destroy(&action);
+
+    return pid;
 }

@@ -252,13 +252,9 @@ mrb_f_waitall(mrb_state *mrb, mrb_value klass)
 
   for (pid = -1;;) {
     pid = mrb_waitpid(-1, &status, 0);
-    printf("pid is %d \n",pid);
 
     if (pid == -1) {
       int e = errno;
-
-    printf("error is %d \n", e);
-    printf("ECHILD is %d \n", ECHILD);
 
     if (e == ECHILD)
       break;
@@ -282,7 +278,7 @@ static mrb_value
 mrb_f_fork(mrb_state *mrb, mrb_value klass)
 {
   mrb_value b;
-  int pid;
+  pid_t pid;
 
   mrb_get_args(mrb, "&", &b);
 
@@ -326,7 +322,7 @@ static pid_t
 mrb_spawn_internal(mrb_state *mrb, mrb_value klass)
 {
   struct mrb_execarg *eargp;
-  int pid;
+  pid_t pid;
 
   eargp = mrb_execarg_new(mrb);
 
@@ -343,7 +339,7 @@ mrb_spawn_internal(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_f_spawn(mrb_state *mrb, mrb_value klass)
 {
-  int pid;
+  pid_t pid;
   pid = mrb_spawn_internal(mrb, klass);
 
   if (pid == -1)

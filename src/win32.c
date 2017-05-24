@@ -25,6 +25,7 @@
 
 #include <windows.h>
 #include <process.h>
+#include <errno.h>
 
 #include <tchar.h>
 #include <stdio.h>

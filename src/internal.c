@@ -29,6 +29,11 @@
 #include "mruby/string.h"
 
 typedef struct mrb_execarg {
+    struct {
+        mrb_value in;
+        mrb_value out;
+        mrb_value err;
+    } fd;
     char **envp;
     char *filename;
     char **argv;
@@ -36,13 +41,13 @@ typedef struct mrb_execarg {
 } mrb_execarg;
 
 static int mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **result);
-static void mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp);
+static void mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, mrb_value opts, struct mrb_execarg *eargp);
 
 struct mrb_execarg*
 mrb_execarg_new(mrb_state *mrb)
 {
     mrb_int argc;
-    mrb_value *argv, env;
+    mrb_value *argv, env, opts;
     struct mrb_execarg *eargp;
 
     mrb_get_args(mrb, "o|*", &env, &argv, &argc);
@@ -61,14 +66,19 @@ mrb_execarg_new(mrb_state *mrb)
                        mrb_obj_value(mrb_class(mrb, env)));
     }
 
+    if (argc > 1 && mrb_hash_p(argv[argc - 1])) {
+        opts = argv[argc - 1];
+        argc--;
+    } else opts = mrb_nil_value();
+
     eargp = malloc(sizeof(struct mrb_execarg));
-    mrb_execarg_fill(mrb, env, argv, argc, eargp);
+    mrb_execarg_fill(mrb, env, argv, argc, opts, eargp);
 
     return eargp;
 }
 
 static void
-mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, struct mrb_execarg *eargp)
+mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, mrb_value opts, struct mrb_execarg *eargp)
 {
     int ai, use_cmd;
     char **result;
@@ -78,6 +88,14 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, s
 
     ai   = mrb_gc_arena_save(mrb);
     tCmd = mrb_string_value_ptr(mrb, argv[0]);
+
+    if (mrb_hash_p(opts)) {
+        eargp->fd.in  = mrb_hash_get(mrb, opts, mrb_check_intern(mrb, "in", 2));
+        eargp->fd.out = mrb_hash_get(mrb, opts, mrb_check_intern(mrb, "out", 3));
+        eargp->fd.err = mrb_hash_get(mrb, opts, mrb_check_intern(mrb, "err", 3));
+    } else {
+        eargp->fd.in  = eargp->fd.out = eargp->fd.err = mrb_nil_value();
+    }
 
 #if defined(__APPLE__) || defined(__linux__)
     use_cmd = (argc > 1 || !strrchr(tCmd, ' ')) ? 1 : 0;

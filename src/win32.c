@@ -28,7 +28,6 @@
 
 #include <tchar.h>
 #include <stdio.h>
-//#include <strsafe.h>
 
 #define BUFSIZE 4096
 
@@ -136,12 +135,10 @@ waitpid(pid_t pid, int *stat_loc, int options)
     struct ChildRecord* child;
     int count, retried, ret;
 
-    /* Artistic or GPL part start */
     if (options == WNOHANG)
         timeout = 0;
     else
         timeout = INFINITE;
-    /* Artistic or GPL part end */
 
     if (pid == -1) {
         HANDLE targets[MAXCHILDNUM];
@@ -155,8 +152,10 @@ waitpid(pid_t pid, int *stat_loc, int options)
             targets[count++] = child->hProcess;
         } END_FOREACH_CHILD;
 
-        if (!count)
+        if (!count) {
+            errno = ECHILD;
             return -1;
+        }
 
         ret = WaitForMultipleObjects(count, targets, FALSE, timeout);
         if (ret == WAIT_TIMEOUT) return 0;
@@ -164,7 +163,11 @@ waitpid(pid_t pid, int *stat_loc, int options)
         if (ret > count) return -1;
 
         cause = FindChildSlotByHandle(targets[ret]);
-        if (!cause) return -1;
+
+        if (!cause) {
+            errno = ECHILD;
+            return -1;
+        }
 
         return poll_child_status(cause, stat_loc);
     }
@@ -172,8 +175,10 @@ waitpid(pid_t pid, int *stat_loc, int options)
         child   = FindChildSlot(pid);
         retried = 0;
 
-        if (!child || child->hProcess == INVALID_HANDLE_VALUE)
+        if (!child) {
+            errno = ECHILD;
             return -1;
+        }
 
         while (!(pid = poll_child_status(child, stat_loc))) {
             /* wait... */

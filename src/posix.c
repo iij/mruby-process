@@ -41,11 +41,12 @@ mrb_value
 mrb_progname(mrb_state *mrb)
 {
     const char *argv0 = getenv("_");
+    const char *progname;
 
     if (!argv0)
         return mrb_nil_value();
 
-    const char *progname = strrchr(argv0, '/');
+    progname = strrchr(argv0, '/');
 
     if (progname)
         progname++;

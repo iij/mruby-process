@@ -294,20 +294,23 @@ spawnve(const char *shell, char *const argv[], char *const envp[])
 {
 
   LPTSTR lpszCurrentVariable;
-
   TCHAR chNewEnv[BUFSIZE];
-
   HANDLE input, output, error;
 
-  input = GetStdHandle(STD_INPUT_HANDLE);
-  output = GetStdHandle(STD_OUTPUT_HANDLE);
-  error = GetStdHandle(STD_ERROR_HANDLE);
+  int i     = 0;
+  char* env = envp[i];
+  pid_t ret = -1;
+  char *cmd = argv_to_str(argv);
 
+  WCHAR *wcmd, *wshell;
+  char tCmd[strlen(cmd)];
+  char tShell[strlen(shell)];
+
+  input  = GetStdHandle(STD_INPUT_HANDLE);
+  output = GetStdHandle(STD_OUTPUT_HANDLE);
+  error  = GetStdHandle(STD_ERROR_HANDLE);
 
   lpszCurrentVariable = (LPTSTR) chNewEnv;
-
-  int i = 0;
-  char* env = envp[i];
 
   while (env != NULL) {
     if (FAILED(strcpy(lpszCurrentVariable, TEXT(env))))
@@ -337,12 +340,6 @@ spawnve(const char *shell, char *const argv[], char *const envp[])
   // dwFlags = CREATE_UNICODE_ENVIRONMENT;
   // #endif
 
-
-  WCHAR *wcmd, *wshell;
-  pid_t ret = -1;
-  char *cmd = argv_to_str(argv);
-  char tCmd[strlen(cmd)];
-  char tShell[strlen(shell)];
   strcpy(tCmd,cmd);
   strcpy(tShell,shell);
 
@@ -366,15 +363,14 @@ spawnv(const char *shell, char *const argv[])
     char *cmd = argv_to_str(argv);
     char tCmd[strlen(cmd)];
     char tShell[strlen(shell)];
-    strcpy(tCmd,cmd);
-    strcpy(tShell,shell);
     HANDLE input, output, error;
 
-    input = GetStdHandle(STD_INPUT_HANDLE);
+    strcpy(tCmd,cmd);
+    strcpy(tShell,shell);
+
+    input  = GetStdHandle(STD_INPUT_HANDLE);
     output = GetStdHandle(STD_OUTPUT_HANDLE);
-    error = GetStdHandle(STD_ERROR_HANDLE);
-
-
+    error  = GetStdHandle(STD_ERROR_HANDLE);
 
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(tCmd, strlen(tCmd));
@@ -395,19 +391,22 @@ get_proc_address(const char *module, const char *func, HANDLE *mh)
     FARPROC ptr;
 
     if (mh)
-      h = LoadLibrary(module);
+        h = LoadLibrary(module);
     else
-      h = GetModuleHandle(module);
+        h = GetModuleHandle(module);
+
     if (!h)
-      return NULL;
+        return NULL;
 
     ptr = GetProcAddress(h, func);
+
     if (mh) {
-      if (ptr)
-        *mh = h;
-      else
-        FreeLibrary(h);
+        if (ptr)
+            *mh = h;
+        else
+            FreeLibrary(h);
     }
+
     return ptr;
 }
 

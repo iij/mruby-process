@@ -290,7 +290,7 @@ void PrintStringArray( char *s[], size_t n )
 
 
 pid_t
-spawnve(const char *shell, char *const argv[], char *const envp[])
+spawnve(const char *shell, char *const argv[], char *const envp[], mrb_value in, mrb_value out, mrb_value err)
 {
 
   LPTSTR lpszCurrentVariable;
@@ -305,6 +305,25 @@ spawnve(const char *shell, char *const argv[], char *const envp[])
   WCHAR *wcmd, *wshell;
   char tCmd[strlen(cmd)];
   char tShell[strlen(shell)];
+
+
+  if(mrb_cptr_p(in)){
+    // input  = mrb_cptr(in);
+  }else{
+    input  = GetStdHandle(STD_INPUT_HANDLE);
+  }
+
+  if(mrb_cptr_p(out)){
+    // posix_spawn_file_actions_adddup2 (&action, 1, (int) out);
+  }else{
+    output = GetStdHandle(STD_OUTPUT_HANDLE);
+  }
+
+  if(mrb_cptr_p(err)){
+    // posix_spawn_file_actions_adddup2 (&action, 2,  (int) err);
+  }else{
+    error  = GetStdHandle(STD_ERROR_HANDLE);
+  }
 
   input  = GetStdHandle(STD_INPUT_HANDLE);
   output = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -356,7 +375,7 @@ spawnve(const char *shell, char *const argv[], char *const envp[])
 }
 
 pid_t
-spawnv(const char *shell, char *const argv[])
+spawnv(const char *shell, char *const argv[], mrb_value in, mrb_value out, mrb_value err)
 {
     WCHAR *wcmd, *wshell;
     pid_t ret = -1;

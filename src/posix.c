@@ -57,16 +57,30 @@ mrb_progname(mrb_state *mrb)
 }
 
 pid_t
-spawnv(const char *path, char *const argv[])
+spawnv(const char *path, char *const argv[], mrb_value in, mrb_value out, mrb_value err)
 {
     pid_t pid;
     posix_spawn_file_actions_t action;
 
     posix_spawn_file_actions_init(&action);
-    posix_spawn_file_actions_adddup2 (&action, 0, 0);
-    posix_spawn_file_actions_adddup2 (&action, 1, 1);
-    posix_spawn_file_actions_adddup2 (&action, 2, 2);
 
+    if(mrb_fixnum_p(in)){
+      posix_spawn_file_actions_adddup2 (&action, 0, mrb_fixnum(in));
+    }else{
+      posix_spawn_file_actions_adddup2 (&action, 0, 0);
+    }
+
+    if(mrb_fixnum_p(out)){
+      posix_spawn_file_actions_adddup2 (&action, 1, mrb_fixnum(out));
+    }else{
+      posix_spawn_file_actions_adddup2 (&action, 1, 1);
+    }
+
+    if(mrb_fixnum_p(err)){
+      posix_spawn_file_actions_adddup2 (&action, 2, mrb_fixnum(err));
+    }else{
+      posix_spawn_file_actions_adddup2 (&action, 2, 2);
+    }
 
     if (posix_spawn(&pid, path, &action, NULL, argv, NULL) != 0)
         return -1;
@@ -77,15 +91,30 @@ spawnv(const char *path, char *const argv[])
 }
 
 pid_t
-spawnve(const char *path, char *const argv[], char *const envp[])
+spawnve(const char *path, char *const argv[], char *const envp[], mrb_value in, mrb_value out, mrb_value err)
 {
     pid_t pid;
     posix_spawn_file_actions_t action;
 
     posix_spawn_file_actions_init(&action);
-    posix_spawn_file_actions_adddup2 (&action, 0, 0);
-    posix_spawn_file_actions_adddup2 (&action, 1, 1);
-    posix_spawn_file_actions_adddup2 (&action, 2, 2);
+
+    if(mrb_fixnum_p(in)){
+      posix_spawn_file_actions_adddup2 (&action, 0, mrb_fixnum(in));
+    }else{
+      posix_spawn_file_actions_adddup2 (&action, 0, 0);
+    }
+
+    if(mrb_fixnum_p(out)){
+      posix_spawn_file_actions_adddup2 (&action, 1, mrb_fixnum(out));
+    }else{
+      posix_spawn_file_actions_adddup2 (&action, 1, 1);
+    }
+
+    if(mrb_fixnum_p(err)){
+      posix_spawn_file_actions_adddup2 (&action, 2, mrb_fixnum(err));
+    }else{
+      posix_spawn_file_actions_adddup2 (&action, 2, 2);
+    }
 
     if (posix_spawn(&pid, path, &action, NULL, argv, envp) != 0)
         return -1;

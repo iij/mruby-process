@@ -327,9 +327,9 @@ mrb_spawn_internal(mrb_state *mrb, mrb_value klass)
   eargp = mrb_execarg_new(mrb);
 
   if (eargp->envp)
-    pid = spawnve(eargp->filename, eargp->argv, eargp->envp);
+    pid = spawnve(eargp->filename, eargp->argv, eargp->envp, eargp->fd.in, eargp->fd.out, eargp->fd.err);
   else
-    pid = spawnv(eargp->filename, eargp->argv);
+    pid = spawnv(eargp->filename, eargp->argv, eargp->fd.in, eargp->fd.out, eargp->fd.err);
 
   free(eargp);
 

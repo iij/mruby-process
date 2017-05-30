@@ -21,6 +21,7 @@
 
 #include "mruby.h"
 #include "mruby/string.h"
+#include "mruby/data.h"
 #include "process.h"
 
 #include <windows.h>
@@ -308,26 +309,16 @@ spawnve(const char *shell, char *const argv[], char *const envp[], mrb_value in,
 
 
   if(mrb_cptr_p(in)){
-    // input  = mrb_cptr(in);
-  }else{
-    input  = GetStdHandle(STD_INPUT_HANDLE);
+    input = mrb_cptr(in);
   }
 
   if(mrb_cptr_p(out)){
-    // posix_spawn_file_actions_adddup2 (&action, 1, (int) out);
-  }else{
-    output = GetStdHandle(STD_OUTPUT_HANDLE);
+    output = mrb_cptr(out);
   }
 
   if(mrb_cptr_p(err)){
-    // posix_spawn_file_actions_adddup2 (&action, 2,  (int) err);
-  }else{
-    error  = GetStdHandle(STD_ERROR_HANDLE);
+    error = mrb_cptr(err);
   }
-
-  input  = GetStdHandle(STD_INPUT_HANDLE);
-  output = GetStdHandle(STD_OUTPUT_HANDLE);
-  error  = GetStdHandle(STD_ERROR_HANDLE);
 
   lpszCurrentVariable = (LPTSTR) chNewEnv;
 
@@ -387,9 +378,18 @@ spawnv(const char *shell, char *const argv[], mrb_value in, mrb_value out, mrb_v
     strcpy(tCmd,cmd);
     strcpy(tShell,shell);
 
-    input  = GetStdHandle(STD_INPUT_HANDLE);
-    output = GetStdHandle(STD_OUTPUT_HANDLE);
-    error  = GetStdHandle(STD_ERROR_HANDLE);
+    if(mrb_cptr_p(in)){
+      input = mrb_cptr(in);
+    }
+
+    if(mrb_cptr_p(out)){
+      output = mrb_cptr(out);
+    }
+
+    if(mrb_cptr_p(err)){
+      error = mrb_cptr(err);
+    }
+
 
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(tCmd, strlen(tCmd));

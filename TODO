@@ -1,0 +1,1 @@
+falls sysopen nicht zu viel code ist, rüberkopieren und tiny_io als dep für beide plattformen verwenden

@@ -30,9 +30,7 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.add_test_dependency 'mruby-print',       core: 'mruby-print'
   spec.add_test_dependency 'mruby-time',        core: 'mruby-time'
   spec.add_test_dependency 'mruby-env',         mgem: 'mruby-env'
-  spec.add_test_dependency 'mruby-io',          mgem: 'mruby-io'
   spec.add_test_dependency 'mruby-os',          mgem: 'mruby-os'
-  spec.add_test_dependency 'mruby-tiny-io',     mgem: 'mruby-tiny-io'
   spec.add_test_dependency 'mruby-array-ext',   core: 'mruby-array-ext'
   spec.add_test_dependency 'mruby-string-ext',  core: 'mruby-string-ext'
 
@@ -40,7 +38,9 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
 
   if target_win32?
     spec.objs.delete objfile("#{build_dir}/src/posix")
+    spec.add_test_dependency 'mruby-tiny-io',     mgem: 'mruby-tiny-io'
   else
     spec.objs.delete objfile("#{build_dir}/src/win32")
+    spec.add_test_dependency 'mruby-io',          mgem: 'mruby-io'
   end
 end

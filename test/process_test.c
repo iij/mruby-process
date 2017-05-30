@@ -1,26 +1,28 @@
+#include "mruby.h"
+#include "mruby/array.h"
+#include "mruby/error.h"
+#include "mruby/string.h"
+#include "mruby/variable.h"
+
+
+#if !defined(__APPLE__) && !defined(__linux__)
+
 #include <sys/types.h>
 #include <errno.h>
 #include <unistd.h>
 
-#if defined(_WIN32) || defined(_WIN64)
+
   #include <winsock.h>
   #include <io.h>
-#else
-  #include <sys/socket.h>
 
-  #include <sys/un.h>
-#endif
+
+
 
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
 
-#include "mruby.h"
-#include "mruby/array.h"
-#include "mruby/error.h"
-#include "mruby/string.h"
-#include "mruby/variable.h"
 
 static mrb_value
 mrb_io_test_sysopen(mrb_state *mrb, mrb_value self)
@@ -57,14 +59,14 @@ mrb_io_test_sysopen(mrb_state *mrb, mrb_value self)
   return mrb_cptr_value(mrb,foo);
 }
 
-
-
+#endif
 
 
 void
 mrb_mruby_process_gem_test(mrb_state* mrb)
 {
   struct RClass *io_test = mrb_define_module(mrb, "WinTest");
-
+  #if !defined(__APPLE__) && !defined(__linux__)
   mrb_define_class_method(mrb, io_test, "sysopen", mrb_io_test_sysopen, MRB_ARGS_REQ(1));
+  #endif
 }

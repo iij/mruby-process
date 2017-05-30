@@ -32,6 +32,14 @@ def wait_for_pid(pid)
   end
 end
 
+if OS.windows?
+  class IO
+    def sysopen(path, *args)
+      WinTest.sysopen(path)
+    end
+  end
+end
+
 def assert_not_windows(*args, &block)
   assert(*args, &block) if OS.posix?
 end
@@ -122,6 +130,21 @@ assert('Process.spawn', 'env') do
 
   wait_for_pid(pid)
   assert_equal var, read('tmp/spawn.txt')
+end
+
+assert_not_windows('Process.spawn', 'pipe') do
+  f = File.open("tmp/pipe.txt","w")
+
+  begin
+    var_out  = IO.sysopen("tmp/pipe.txt","w")
+    pid = spawn("echo hi",{out: var_out})
+
+    wait_for_pid(pid)
+  ensure
+    f.close
+  end
+
+  assert_equal "hi", read('tmp/pipe.txt')
 end
 
 assert('Process.exec', 'invalid signatures') do

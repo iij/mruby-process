@@ -18,25 +18,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+class String
+  def strip
+    a = 0
+    z = size - 1
+    a += 1 while a <= z and " \f\n\r\t\v".include?(self[a])
+    z -= 1 while a <= z and " \f\n\r\t\v\0".include?(self[z])
+    z >= 0 ? self[a..z] : ''
+  end
+end unless ''.respond_to? :strip
+
+def IO.sysopen(path, mod)
+  ProcessTest.sysopen(path, mod)
+end if OS.windows?
+
 def read(path)
   f = File.open(path)
-  f.read.to_s[0..-2]
+  f.read.to_s.strip
 ensure
-  f.close
+  f.close if f
 end
 
 def wait_for_pid(pid)
   loop do
     p = Process.waitpid(pid, Process::WNOHANG)
     break if p
-  end
-end
-
-if OS.windows?
-  class IO
-    def self.sysopen(path, _mod)
-      ProcessTest.sysopen(path)
-    end
   end
 end
 
@@ -117,7 +123,7 @@ assert('Process.spawn') do
   assert_equal $?.pid, pid
 
   var = "#{ENV['RAND']}x"
-  pid = spawn("echo #{var}>tmp/spawn.txt")
+  pid = spawn("echo #{var} > tmp/spawn.txt")
 
   wait_for_pid(pid)
   assert_equal var, read('tmp/spawn.txt')
@@ -126,12 +132,13 @@ end
 assert('Process.spawn', 'env') do
   var = "x#{ENV['RAND']}"
   env = OS.posix? ? '$MYVAR' : '%MYVAR%'
-  pid = spawn({ MYVAR: var }, "echo #{env}>tmp/spawn.txt")
+  pid = spawn({ MYVAR: var }, "echo #{env} > tmp/spawn.txt")
 
   wait_for_pid(pid)
   assert_equal var, read('tmp/spawn.txt')
 end
 
+# TODO: More tests for edge cases!
 assert('Process.spawn', 'pipe') do
   begin
     var = ENV['RAND']
@@ -145,7 +152,8 @@ assert('Process.spawn', 'pipe') do
     pid = spawn({ MYVAR: var }, "echo #{env}", out: pip)
 
     wait_for_pid(pid)
-    assert_equal "#{var}\n#{var}", read('tmp/pipe.txt')
+
+    assert_equal var * 2, read('tmp/pipe.txt').sub("\r", '').sub("\n", '')
   ensure
     IO._sysclose(pip) if OS.posix?
   end
@@ -252,7 +260,7 @@ assert('Process.system') do
   var = ENV['RAND']
   env = OS.posix? ? '$MYVAR' : '%MYVAR%'
 
-  system({ MYVAR: var }, "echo #{env}>tmp/system.txt")
+  system({ MYVAR: var }, "echo #{env} > tmp/system.txt")
 
   assert_equal var, read('tmp/system.txt')
 end

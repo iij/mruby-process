@@ -28,11 +28,12 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.authors = 'mruby developers'
 
   spec.add_test_dependency 'mruby-print',       core: 'mruby-print'
-  spec.add_test_dependency 'mruby-time',        core: 'mruby-time'
   spec.add_test_dependency 'mruby-env',         mgem: 'mruby-env'
   spec.add_test_dependency 'mruby-os',          mgem: 'mruby-os'
 
   spec.cc.defines << 'HAVE_MRB_PROCESS_H'
+
+  ENV['RAND'] = Time.now.to_i.to_s if build.test_enabled?
 
   if target_win32?
     spec.objs.delete objfile("#{build_dir}/src/posix")

@@ -1,9 +1,26 @@
-#include "mruby.h"
-#include "mruby/array.h"
-#include "mruby/error.h"
-#include "mruby/string.h"
-#include "mruby/variable.h"
+/* MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
+#include "mruby.h"
+#include "mruby/string.h"
 
 #if !defined(__APPLE__) && !defined(__linux__)
 
@@ -11,12 +28,8 @@
 #include <errno.h>
 #include <unistd.h>
 
-
-  #include <winsock.h>
-  #include <io.h>
-
-
-
+#include <winsock.h>
+#include <io.h>
 
 #include <sys/stat.h>
 #include <stdio.h>
@@ -65,8 +78,8 @@ mrb_io_test_sysopen(mrb_state *mrb, mrb_value self)
 void
 mrb_mruby_process_gem_test(mrb_state* mrb)
 {
-  struct RClass *io_test = mrb_define_module(mrb, "WinTest");
-  #if !defined(__APPLE__) && !defined(__linux__)
+  struct RClass *io_test = mrb_define_module(mrb, "ProcessTest");
+#if !defined(__APPLE__) && !defined(__linux__)
   mrb_define_class_method(mrb, io_test, "sysopen", mrb_io_test_sysopen, MRB_ARGS_REQ(1));
-  #endif
+#endif
 }

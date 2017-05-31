@@ -20,7 +20,7 @@
 
 def read(path)
   f = File.open(path)
-  f.read.to_s.strip
+  f.read.to_s[0..-2]
 ensure
   f.close
 end
@@ -31,8 +31,6 @@ def wait_for_pid(pid)
     break if p
   end
 end
-
-
 
 if OS.windows?
   class IO
@@ -135,21 +133,18 @@ assert('Process.spawn', 'env') do
 end
 
 assert('Process.spawn', 'pipe') do
-  f = File.open("tmp/pipe.txt","w")
-
   begin
-    var_out  = IO.sysopen("tmp/pipe.txt","w")
-    pid = spawn("echo hi",{out: var_out})
+    f       = open('tmp/pipe.txt', 'w')
+    var_out = IO.sysopen('tmp/pipe.txt', 'w')
+    pid     = spawn 'echo hi', out: var_out
 
     wait_for_pid(pid)
+
+    assert_equal 'hi', read('tmp/pipe.txt')
   ensure
-    f.close
+    f.close if f
   end
-
-  assert_equal "hi", read('tmp/pipe.txt')
 end
-
-
 
 assert('Process.exec', 'invalid signatures') do
   assert_raise(ArgumentError) { exec }
@@ -229,7 +224,7 @@ assert('Process.waitall') do
   assert_equal 3, a.size
 
   pids.each do |pid|
-    pid_status = a.assoc(pid)
+    pid_status = a.find { |i| i[0] == pid }
 
     assert_kind_of Array, pid_status
     assert_equal 2, pid_status.size

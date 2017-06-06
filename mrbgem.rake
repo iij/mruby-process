@@ -27,12 +27,15 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.license = 'MIT'
   spec.authors = 'mruby developers'
 
-  spec.add_test_dependency 'mruby-print',       core: 'mruby-print'
-  spec.add_test_dependency 'mruby-env',         mgem: 'mruby-env'
-  spec.add_test_dependency 'mruby-os',          mgem: 'mruby-os'
+  spec.add_test_dependency 'mruby-print', core: 'mruby-print'
+  spec.add_test_dependency 'mruby-env',   mgem: 'mruby-env'
+  spec.add_test_dependency 'mruby-os',    mgem: 'mruby-os'
 
-  spec.mruby.cc.defines       << 'HAVE_MRB_PROCESS_H'
-  spec.mruby.cc.include_paths << "#{build_dir}/include"
+  spec.mruby.cc.defines << 'HAVE_MRB_PROCESS_H'
+
+  [spec.cc, spec.mruby.cc].each do |cc|
+    cc.include_paths << "#{spec.dir}/include/mruby/ext"
+  end
 
   ENV['RAND'] = Time.now.to_i.to_s if build.test_enabled?
 

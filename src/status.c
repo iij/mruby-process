@@ -21,8 +21,7 @@
 
 #include "mruby.h"
 #include "mruby/variable.h"
-
-#include "process.h"
+#include "mruby/ext/process.h"
 
 static mrb_value
 mrb_pst_new(mrb_state *mrb, pid_t pid, mrb_int status)

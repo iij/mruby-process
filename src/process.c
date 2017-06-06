@@ -19,12 +19,11 @@
  * SOFTWARE.
  */
 
-#include "process.h"
-
 #include "mruby.h"
 #include "mruby/variable.h"
 #include "mruby/array.h"
 #include "mruby/error.h"
+#include "mruby/ext/process.h"
 
 #include "internal.c"
 #include "status.c"

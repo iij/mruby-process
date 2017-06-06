@@ -19,16 +19,14 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "mruby.h"
 #include "mruby/class.h"
 #include "mruby/hash.h"
 #include "mruby/array.h"
 #include "mruby/string.h"
 
-
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct mrb_execarg {
     struct {

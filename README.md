@@ -5,16 +5,16 @@ Implementation of the Ruby 2.4.1 Core Library _Process_ for [mruby][mruby].
 All listed methods have been tested with Ubuntu, MacOS and Windows. Cross compilation works as well.
 
 ```ruby
-pid = spawn('ls', '-la')
+system { VAR: 'var' }, 'echo $VAR', out: pipe
 ```
 
-Include [process.h][process_h] to use the native methods within your own project:
+Include [mruby/ext/process.h][process_h] to use the native methods within your own project:
 
 ```c
 // To use kill, waitpid, fork, spawn, ... on Unix and Win32
 
 #ifdef HAVE_MRB_PROCESS_H
-# include 'process.h'
+# include "mruby/ext/process.h"
 #endif
 
 static pid_t
@@ -205,9 +205,9 @@ DEALINGS IN THE SOFTWARE.
 
 
 [mruby]: https://github.com/mruby/mruby
+[process_h]: https://github.com/appPlant/mruby-process/blob/windows/include/mruby/ext/process.h
 [mruby-process-ext]: https://github.com/ksss/mruby-process-ext
 [mruby-process-sys]: https://github.com/haconiwa/mruby-process-sys
 [mruby-sleep]: https://github.com/matsumotory/mruby-sleep
 [mruby-io]: https://github.com/iij/mruby-io
 [mruby-signal]: https://github.com/ksss/mruby-signal
-[process_h]: https://github.com/appPlant/mruby-process/blob/windows/include/process.h

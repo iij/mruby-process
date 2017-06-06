@@ -19,7 +19,7 @@
 # SOFTWARE.
 
 def target_win32?
-  return true if ENV['OS'] == 'Windows_NT'
+  return true if RUBY_PLATFORM =~ /mingw|mswin/
   build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
 end
 
@@ -31,7 +31,8 @@ MRuby::Gem::Specification.new('mruby-process') do |spec|
   spec.add_test_dependency 'mruby-env',         mgem: 'mruby-env'
   spec.add_test_dependency 'mruby-os',          mgem: 'mruby-os'
 
-  spec.cc.defines << 'HAVE_MRB_PROCESS_H'
+  spec.mruby.cc.defines       << 'HAVE_MRB_PROCESS_H'
+  spec.mruby.cc.include_paths << "#{build_dir}/include"
 
   ENV['RAND'] = Time.now.to_i.to_s if build.test_enabled?
 

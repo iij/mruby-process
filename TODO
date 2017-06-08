@@ -1,1 +1,14 @@
-falls sysopen nicht zu viel code ist, rüberkopieren und tiny_io als dep für beide plattformen verwenden
+funktion zum auflösen eines relativen pfad auf einen absoluten pafd. sowohl für unix als auch für windows. "inspiration" von cruby holen
+
+https://github.com/ruby/ruby/blob/202bbda2bf5f25343e286099140fb9282880ecba/dln_find.c
+dln_find_exe_r
+
+wenn fertig eingebunden und getestet seb schreiben, damit der pull request schreiben kann..
+
+mruby-io
+grundsätzlich mruby-io auf einen ähnlichen stand bringen wie mruby process, heisst alles das, was noch nicht für windows funktioniert, für windows zum funktionieren bringen
+wenn bei mruby-io als dependency mruby-process drin ist, das auf unseren mruby-process fork windows branch ändern.
+
+pipes, den sysopenmock den ich gemacht habe
+
+für die CI systeme configurieren

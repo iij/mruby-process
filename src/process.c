@@ -27,6 +27,7 @@
 #include "mruby/error.h"
 
 #include "internal.c"
+
 #include "status.c"
 #include "signal.c"
 

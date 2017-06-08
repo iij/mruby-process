@@ -138,7 +138,7 @@ assert('Process.spawn', 'env') do
   assert_equal var, read('tmp/spawn.txt')
 end
 
-# TODO: More tests for edge cases!
+# TODO: More tests for edge cases! whatif no valid pipe,
 assert('Process.spawn', 'pipe') do
   begin
     var = ENV['RAND']
@@ -154,6 +154,18 @@ assert('Process.spawn', 'pipe') do
     wait_for_pid(pid)
 
     assert_equal var * 2, read('tmp/pipe.txt').sub("\r", '').sub("\n", '')
+  ensure
+    IO._sysclose(pip) if OS.posix?
+  end
+end
+
+assert('Process.spawn', 'pipe error') do
+  begin
+    pip = IO.sysopen('tmp/pipe_error.txt', 'w')
+    pid = spawn("ls -asdw", err: pip)
+
+    wait_for_pid(pid)
+    assert_equal "ls: option requires an argument -- 'w'\nTry 'ls --help' for more information.", read('tmp/pipe_error.txt')
   ensure
     IO._sysclose(pip) if OS.posix?
   end

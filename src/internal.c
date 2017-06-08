@@ -27,6 +27,7 @@
 #include "mruby/hash.h"
 #include "mruby/array.h"
 #include "mruby/string.h"
+#include "dln.c"
 
 
 
@@ -86,6 +87,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     char **result;
     char *shell;
     const char *tCmd;
+	char fbuf[/*MAXPATHLEN*/80]; // TODO
     mrb_value argv0 = mrb_nil_value();
 
     ai   = mrb_gc_arena_save(mrb);
@@ -112,9 +114,13 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
         argc   = 3;
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
 
+
+
+
+
     #if defined(__APPLE__) || defined(__linux__)
         shell = getenv("SHELL");
-        if (!shell) shell = strdup("/bin/sh");
+        if (!shell) shell = strdup(dln_find_exe_r("sh", 0, fbuf, sizeof(fbuf)));
         result[1] = strdup("-c");
     #else
         shell = getenv("ComSpec");
@@ -129,7 +135,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
 
 #if defined(__APPLE__) || defined(__linux__)
     if (result[0][0] != '/') {
-        argv0 = mrb_str_new(mrb, "/bin/", 5);
+        argv0 = mrb_str_new(mrb, "/bin/", 5); //TODO redundand?
     }
 #else
     if (result[0][1] != ':') {

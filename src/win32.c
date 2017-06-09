@@ -22,12 +22,11 @@
 #include "mruby.h"
 #include "mruby/string.h"
 #include "mruby/data.h"
-#include "process.h"
+#include "mruby/ext/process.h"
 
 #include <windows.h>
 #include <process.h>
 #include <errno.h>
-
 #include <tchar.h>
 #include <stdio.h>
 

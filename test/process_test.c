@@ -47,8 +47,8 @@ mrb_process_mock_sysopen(mrb_state *mrb, mrb_value self)
 void
 mrb_mruby_process_gem_test(mrb_state* mrb)
 {
-    struct RClass *pt = mrb_define_module(mrb, "ProcessTest");
 #if !defined(__APPLE__) && !defined(__linux__)
+    struct RClass *pt = mrb_define_module(mrb, "ProcessTest");
     mrb_define_class_method(mrb, pt, "sysopen", mrb_process_mock_sysopen, MRB_ARGS_REQ(2));
 #endif
 }

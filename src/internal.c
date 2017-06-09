@@ -122,7 +122,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
         result[1] = strdup("-c");
     #else
         shell = getenv("ComSpec");
-        if (!shell) shell = strdup("C:\\WINDOWS\\system32\\cmd.exe");
+        if (!shell) shell = strdup(dln_find_exe_r("cmd.exe", 0, fbuf, sizeof(fbuf)));
         result[1] = strdup("/c");
     #endif
         result[0] = shell;

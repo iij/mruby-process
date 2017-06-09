@@ -165,7 +165,7 @@ assert('Process.spawn', 'pipe error') do
     pid = spawn("ls -asdw", err: pip)
 
     wait_for_pid(pid)
-    assert_equal "ls: option requires an argument -- 'w'\nTry 'ls --help' for more information.", read('tmp/pipe_error.txt')
+    assert_include read('tmp/pipe_error.txt'), "ls: option requires an argument"
   ensure
     IO._sysclose(pip) if OS.posix?
   end
@@ -267,7 +267,7 @@ assert('Process.system') do
   assert_false system 'exit 1'
   assert_equal 1, $?.exitstatus
 
-  assert_nothing_raised { system 'exitz' }
+  assert_nothing_raised { system 'exit' }
 
   var = ENV['RAND']
   env = OS.posix? ? '$MYVAR' : '%MYVAR%'

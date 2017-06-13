@@ -34,7 +34,7 @@ end if OS.windows?
 
 def read(path)
   f = File.open(path)
-  f.read.to_s.strip
+  f.read.to_s.strip.sub("\r", '').sub("\n", '')
 ensure
   f.close if f
 end
@@ -110,10 +110,6 @@ assert('Process.spawn') do
   assert_raise(ArgumentError) { spawn }
   assert_raise(TypeError) { spawn 123 }
 
-  # This test fails on travis (returns status 0 even cmd does not exist)
-  # Suspended, now fails on windows as well
-  # assert_raise(RuntimeError) { wait_for_pid spawn('.exe') } unless ENV['TRAVIS']
-
   pid = spawn 'exit 0'
   wait_for_pid(pid)
 
@@ -128,11 +124,6 @@ assert('Process.spawn') do
 
   wait_for_pid(pid)
   assert_equal var, read('tmp/spawn.txt')
-
-  readelfpip = IO.sysopen('tmp/readelf.txt', 'w')
-  pid = spawn("readelf.exe -v", out: readelfpip)
-  # pid = spawn("readelf.exe", "-v", out: readelfpip) TODO pipe doesnt work with proper spawn call (spawn program directly w/o using cmd)
-  wait_for_pid(pid)
 end
 
 assert('Process.spawn', 'env') do
@@ -159,7 +150,7 @@ assert('Process.spawn', 'pipe') do
 
     wait_for_pid(pid)
 
-    assert_equal var * 2, read('tmp/pipe.txt').sub("\r", '').sub("\n", '')
+    assert_equal var * 2, read('tmp/pipe.txt')
   ensure
     IO._sysclose(pip) if OS.posix?
   end
@@ -167,11 +158,11 @@ end
 
 assert('Process.spawn', 'pipe error') do
   begin
-    pip = IO.sysopen('tmp/pipe_error.txt', 'w')
-    pid = spawn("ls -asdw", err: pip)
+    pip = IO.sysopen('tmp/pipe.err', 'w')
+    pid = spawn('ruby unknown', err: pip)
 
     wait_for_pid(pid)
-    assert_include read('tmp/pipe_error.txt'), "ls: option requires an argument"
+    assert_false read('tmp/pipe.err').empty?
   ensure
     IO._sysclose(pip) if OS.posix?
   end

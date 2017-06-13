@@ -81,17 +81,14 @@ mrb_execarg_new(mrb_state *mrb)
 static void
 mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, mrb_value opts, struct mrb_execarg *eargp)
 {
-    int ai, use_cmd;
+    int ai, use_cmd, do_exit;
     char **result;
     char *shell;
-    char *dln_cmd;
-    const char *tCmd;
-	  char fbuf[/*MAXPATHLEN*/80]; // TODO
+    const char *tCmd, *fCmd;
+	char buf[80];
     mrb_value argv0 = mrb_nil_value();
 
-    ai   = mrb_gc_arena_save(mrb);
-    tCmd = mrb_string_value_ptr(mrb, argv[0]);
-    dln_cmd = dln_find_exe_r(tCmd, 0, fbuf, sizeof(fbuf));
+    ai = mrb_gc_arena_save(mrb);
 
     if (mrb_hash_p(opts)) {
         eargp->fd.in  = mrb_hash_get(mrb, opts, mrb_check_intern(mrb, "in", 2));
@@ -101,11 +98,11 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
         eargp->fd.in  = eargp->fd.out = eargp->fd.err = mrb_nil_value();
     }
 
-#if defined(__APPLE__) || defined(__linux__)
-    use_cmd = ((argc > 1 || !strrchr(tCmd, ' ')) && dln_cmd) ? 1 : 0;
-#else
-    use_cmd = ((argc > 1 || strstr(tCmd, ".exe") || !strrchr(tCmd, ' ')) && dln_cmd) ? 1 : 0; //TODO bei z.B. readelf.exe -v wäre ohne dln_cmd use_cmd=1, aber dln_find_exe_r kann "readelf -v" nicht auflösen!
-#endif
+    tCmd = mrb_string_value_ptr(mrb, argv[0]);
+    fCmd = dln_find_exe_r(tCmd, 0, buf, sizeof(buf));
+
+    do_exit = !fCmd && strncmp("exit", tCmd, 4) == 0;
+    use_cmd = (!strrchr(tCmd, ' ') && (fCmd || (!do_exit && argc > 1))) ? 1 : 0;
 
     if (use_cmd) {
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
@@ -114,17 +111,13 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
         argc   = 3;
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
 
-
-
-
-
     #if defined(__APPLE__) || defined(__linux__)
         shell = getenv("SHELL");
-        if (!shell) shell = strdup(dln_find_exe_r("sh", 0, fbuf, sizeof(fbuf)));
+        if (!shell) shell = strdup("bin/sh");
         result[1] = strdup("-c");
     #else
         shell = getenv("ComSpec");
-        if (!shell) shell = strdup(dln_find_exe_r("cmd.exe", 0, fbuf, sizeof(fbuf)));
+        if (!shell) shell = strdup("C:\\WINDOWS\\system32\\cmd.exe");
         result[1] = strdup("/c");
     #endif
         result[0] = shell;
@@ -134,21 +127,16 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     result[argc] = NULL;
 
 #if defined(__APPLE__) || defined(__linux__)
-    if (result[0][0] != '/') {
-      argv0 = mrb_str_new(mrb, dln_find_exe_r(tCmd, 0, fbuf, sizeof(fbuf)), 5); //TODO redundand?
+    if (fCmd && result[0][0] != '/') {
+        argv0 = mrb_str_new_cstr(mrb, fCmd);
     }
 #else
-    if (result[0][1] != ':') {
-      char *dln_result = dln_find_exe_r(tCmd, 0, fbuf, sizeof(fbuf));
-      argv0 = mrb_str_new(mrb, dln_result, strlen(dln_result) ); // TODO: !!!
+    if (fCmd && result[0][1] != ':') {
+        argv0 = mrb_str_new_cstr(mrb, fCmd);
     }
 #endif
 
-
-
-
     if (mrb_bool(argv0)) {
-        // mrb_str_cat_cstr(mrb, argv0, result[0]);
         result[0] = mrb_str_to_cstr(mrb, argv0);
     }
 

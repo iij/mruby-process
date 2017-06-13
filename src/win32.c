@@ -355,6 +355,8 @@ spawnve(const char *shell, char *const argv[], char *const envp[], mrb_value in,
   wshell = str_to_wstr(tShell, strlen(tShell));
   wcmd   = str_to_wstr(tCmd, strlen(tCmd));
 
+
+
   ret = child_result(CreateChild(wshell, wcmd, NULL, input, output, error, 0, (LPVOID) chNewEnv), P_NOWAIT);
 
   free(wshell);

@@ -84,12 +84,14 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     int ai, use_cmd;
     char **result;
     char *shell;
+    char *dln_cmd;
     const char *tCmd;
-	char fbuf[/*MAXPATHLEN*/80]; // TODO
+	  char fbuf[/*MAXPATHLEN*/80]; // TODO
     mrb_value argv0 = mrb_nil_value();
 
     ai   = mrb_gc_arena_save(mrb);
     tCmd = mrb_string_value_ptr(mrb, argv[0]);
+    dln_cmd = dln_find_exe_r(tCmd, 0, fbuf, sizeof(fbuf));
 
     if (mrb_hash_p(opts)) {
         eargp->fd.in  = mrb_hash_get(mrb, opts, mrb_check_intern(mrb, "in", 2));
@@ -100,9 +102,9 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     }
 
 #if defined(__APPLE__) || defined(__linux__)
-    use_cmd = (argc > 1 || !strrchr(tCmd, ' ')) ? 1 : 0;
+    use_cmd = ((argc > 1 || !strrchr(tCmd, ' ')) && dln_cmd) ? 1 : 0;
 #else
-    use_cmd = (argc > 1 || strstr(tCmd, ".exe")) ? 1 : 0;
+    use_cmd = ((argc > 1 || strstr(tCmd, ".exe") || !strrchr(tCmd, ' ')) && dln_cmd) ? 1 : 0; //TODO bei z.B. readelf.exe -v wäre ohne dln_cmd use_cmd=1, aber dln_find_exe_r kann "readelf -v" nicht auflösen!
 #endif
 
     if (use_cmd) {
@@ -133,16 +135,20 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
 
 #if defined(__APPLE__) || defined(__linux__)
     if (result[0][0] != '/') {
-        argv0 = mrb_str_new(mrb, "/bin/", 5); //TODO redundand?
+      argv0 = mrb_str_new(mrb, dln_find_exe_r(tCmd, 0, fbuf, sizeof(fbuf)), 5); //TODO redundand?
     }
 #else
     if (result[0][1] != ':') {
-        argv0 = mrb_str_new(mrb, "C:\\GnuWin\\bin\\", 14); // TODO: !!!
+      char *dln_result = dln_find_exe_r(tCmd, 0, fbuf, sizeof(fbuf));
+      argv0 = mrb_str_new(mrb, dln_result, strlen(dln_result) ); // TODO: !!!
     }
 #endif
 
+
+
+
     if (mrb_bool(argv0)) {
-        mrb_str_cat_cstr(mrb, argv0, result[0]);
+        // mrb_str_cat_cstr(mrb, argv0, result[0]);
         result[0] = mrb_str_to_cstr(mrb, argv0);
     }
 

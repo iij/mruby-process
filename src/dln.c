@@ -1,52 +1,47 @@
-
-#include "mruby.h"
-#define dln_warning mrb_warn
-#define dln_warning_arg
-
-//#include "dln.h"
+/* MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
 #include <stdlib.h>
 #include <strings.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
-#if defined(_WIN32)
-//#include "missing/file.h"
-#endif
-
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifndef S_ISDIR
-#   define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#endif
-
-
-
-
-// TODO makros weg, wrong usage. blergh
 #ifndef PATH_ENV
-#define PATH_ENV "path"
+# define PATH_ENV "path"
 #endif
 #ifndef PATH_SEP
-#define PATH_SEP ";"
+# define PATH_SEP ";"
 #endif
 
-#if !defined(_WIN32) && !HAVE_DECL_GETENV
-char *getenv();
-#endif
-
-static char *dln_find_1(const char *fname, const char *path, char *buf, size_t size, int exe_flag /*DLN_FIND_EXTRA_ARG_DECL*/);
-char* dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size /*DLN_FIND_EXTRA_ARG_DECL*/);
-char* dln_find_file_r(const char *fname, const char *path, char *buf, size_t size /*	DLN_FIND_EXTRA_ARG_DECL*/);
-
-
+static char *dln_find_1(const char *fname, const char *path, char *buf, size_t size, int exe_flag);
+char* dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size);
+char* dln_find_file_r(const char *fname, const char *path, char *buf, size_t size);
 
 char*
-dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size /*DLN_FIND_EXTRA_ARG_DECL*/)
+dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size)
 {
  	char *envpath = 0;
+
   	if (!path) {
     	path = getenv(PATH_ENV);
 	  	if (path)
@@ -61,31 +56,30 @@ dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size /*DLN
 	     	"/bin" PATH_SEP
 	     	".";
   	}
-  	buf = dln_find_1(fname, path, buf, size, 1 /*DLN_FIND_EXTRA_ARG*/);
+
+  	buf = dln_find_1(fname, path, buf, size, 1);
+
   	if (envpath)
   		free(envpath);
+
 	return buf;
 }
 
 char *
-dln_find_file_r(const char *fname, const char *path, char *buf, size_t size
-/*DLN_FIND_EXTRA_ARG_DECL*/)
+dln_find_file_r(const char *fname, const char *path, char *buf, size_t size)
 {
     if (!path) path = ".";
-    return dln_find_1(fname, path, buf, size, 0 /*DLN_FIND_EXTRA_ARG*/);
+    return dln_find_1(fname, path, buf, size, 0);
 }
 
 static char *
-dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
-	   int exe_flag /* non 0 if looking for executable. */
-   /*DLN_FIND_EXTRA_ARG_DECL*/)
+dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe_flag)
 {
 	register const char *dp;
     register const char *ep;
     register char *bp;
     struct stat st;
     size_t i, fnlen, fspace;
-
 
 #ifdef DOSISH
     static const char extension[][5] = {
@@ -96,35 +90,18 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
     const char *ext = 0;
 #endif
 
-
-
     const char *p = fname;
-
-    static const char pathname_too_long[] = "openpath: pathname too long (ignored)\n\
-\tDirectory \"%.*s\"%s\n\tFile \"%.*s\"%s\n";
-/*#define PATHNAME_TOO_LONG() dln_warning(dln_warning_arg pathname_too_long, \
-					((bp - fbuf) > 100 ? 100 : (int)(bp - fbuf)), fbuf, \
-					((bp - fbuf) > 100 ? "..." : ""), \
-					(fnlen > 100 ? 100 : (int)fnlen), fname, \
-					(fnlen > 100 ? "..." : ""))*/
 
 #define RETURN_IF(expr) if (expr) return (char *)fname;
 
     RETURN_IF(!fname);
-    fnlen = strlen(fname);
-    if (fnlen >= size) {
-		/*dln_warning(dln_warning_arg
-		    "openpath: pathname too long (ignored)\n\tFile \"%.*s\"%s\n",
-		    (fnlen > 100 ? 100 : (int)fnlen), fname,
-		    (fnlen > 100 ? "..." : ""));*/
-		return NULL;
-    }
 
+    fnlen = strlen(fname);
+
+    if (fnlen >= size)
+		return NULL;
 
 #ifdef DOSISH
-# ifndef CharNext
-# define CharNext(p) ((p)+1)
-# endif
 # ifdef DOSISH_DRIVE_LETTER
     if (((p[0] | 0x20) - 'a') < 26  && p[1] == ':') {
 		p += 2;
@@ -161,28 +138,22 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
 		}
     }
     ep = bp = 0;
-	printf("returned at  %s", "something?");
+
     if (!exe_flag) {
-		printf("returned at  %s", "exe_flag?");
 		RETURN_IF(is_abs);
-		printf("nope\n");
     }
     else if (has_path) {
-		printf("returned at  %s", "if ext?");
 		RETURN_IF(ext);
-		printf("nope\n");
 		i = p - fname;
 		if (i + 1 > size) goto toolong;
 		fspace = size - i - 1;
 		bp = fbuf;
 		ep = p;
-		printf("ep is here %s\n", ep);
 		memcpy(fbuf, fname, i + 1);
 		goto needs_extension;
     }
     p = fname;
 #endif
-
 
     if (*p == '.' && *++p == '.') ++p;
     RETURN_IF(*p == '/');
@@ -211,7 +182,7 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
 		    **	take the path literally.
 		    */
 		    if (*dp == '~' && (l == 1 ||
-#if defined(DOSISH)
+#ifdef DOSISH
 				       dp[1] == '\\' ||
 #endif
 				       dp[1] == '/')) {
@@ -247,13 +218,12 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
 		i = fnlen;
 		if (fspace < i) {
 	  		toolong:
-	    	printf("Pathname is too long \n" );//PATHNAME_TOO_LONG();
 	    	goto next;
 		}
 		fspace -= i;
 		memcpy(bp, fname, i + 1);
 
-#if defined(DOSISH)
+#ifdef DOSISH
 		if (exe_flag && !ext) {
 	  		needs_extension:
 	    	for (j = 0; j < sizeof(extension) / sizeof(extension[0]); j++) {
@@ -270,9 +240,6 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
 		}
 #endif
 
-#ifndef S_ISREG
-# define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#endif
 		if (stat(fbuf, &st) == 0 && S_ISREG(st.st_mode)) {
 	    	if (exe_flag == 0){
 		 		return fbuf;
@@ -281,11 +248,10 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size,
 	    if (access(fbuf, X_OK) == 0) return fbuf;
 		}
       	next:
-	/* if not, and no other alternatives, life is bleak */
+	    /* if not, and no other alternatives, life is bleak */
 		if (*ep == '\0') {
 	    	return NULL;
 		}
-
-	/* otherwise try the next component in the search path */
+	    /* otherwise try the next component in the search path */
     }
 }

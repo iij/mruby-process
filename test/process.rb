@@ -152,7 +152,7 @@ assert('Process.spawn', 'pipe') do
 
     assert_equal var * 2, read('tmp/pipe.txt')
 
-    pid = spawn("readelf", "-v", out: pip)
+    assert_nothing_raised{ pid = spawn("readelf", "-v", out: pip)}
 
     wait_for_pid(pid)
 

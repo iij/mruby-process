@@ -151,6 +151,14 @@ assert('Process.spawn', 'pipe') do
     wait_for_pid(pid)
 
     assert_equal var * 2, read('tmp/pipe.txt')
+
+    pid = spawn("readelf", "-v", out: pip)
+
+    wait_for_pid(pid)
+
+    assert_include read('tmp/pipe.txt'), 'GNU readelf (GNU Binutils)'
+
+    # assert_equal var * 2, read('tmp/pipe.txt')
   ensure
     IO._sysclose(pip) if OS.posix?
   end

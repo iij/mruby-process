@@ -36,11 +36,31 @@
 static char *dln_find_1(const char *fname, const char *path, char *buf, size_t size, int exe_flag);
 char* dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size);
 char* dln_find_file_r(const char *fname, const char *path, char *buf, size_t size);
+char * stringReplace(char *search, char *replace, char *string);
+
 
 char*
 dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size)
 {
  	char *envpath = 0;
+  char working_copy[80];
+
+
+/* TODO This is a workaround to stop dln_fin_exe_r from returning
+  e.g. "echo %MYVAR% > tmp/spawn.txt" AS ABSOLUTE PATH
+  TO EXECUTABLE "echo %MYVAR% > tmp/spawn.txt" because that's total nonsense
+  and a cause for errors
+  On second thought, this would also eliminate any path with included whitespaces*/
+  // if(strrchr(fname, ' '))
+  //   return NULL;
+
+  strcpy(working_copy,fname);
+
+
+#if !defined(__APPLE__) || !defined(__linux__)
+  if(!strstr(working_copy, ".exe"))
+    strcat(working_copy, ".exe");
+#endif
 
   	if (!path) {
     	path = getenv(PATH_ENV);
@@ -57,11 +77,15 @@ dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size)
 	     	".";
   	}
 
-  	buf = dln_find_1(fname, path, buf, size, 1);
+  	buf = dln_find_1(working_copy, path, buf, size, 1);
 
   	if (envpath)
   		free(envpath);
-
+  // printf("first buf %s\n", buf);
+// #if !defined(__APPLE__) && !defined(__linux__)
+//     stringReplace("/", "\\", buf);
+// #endif
+  // printf("secon buf %s\n", buf);
 	return buf;
 }
 
@@ -254,4 +278,43 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
 		}
 	    /* otherwise try the next component in the search path */
     }
+}
+
+
+
+char * stringReplace(char *search, char *replace, char *string) {
+	char *tempString, *searchStart;
+	int len=0;
+
+
+	// preuefe ob Such-String vorhanden ist
+	searchStart = strstr(string, search);
+	if(searchStart == NULL) {
+		return string;
+	}
+
+	// Speicher reservieren
+	tempString = (char*) malloc(strlen(string) * sizeof(char));
+	if(tempString == NULL) {
+		return NULL;
+	}
+
+	// temporaere Kopie anlegen
+	strcpy(tempString, string);
+
+	// ersten Abschnitt in String setzen
+	len = searchStart - string;
+	string[len] = '\0';
+
+	// zweiten Abschnitt anhaengen
+	strcat(string, replace);
+
+	// dritten Abschnitt anhaengen
+	len += strlen(search);
+	strcat(string, (char*)tempString+len);
+
+	// Speicher freigeben
+	free(tempString);
+
+	return string;
 }

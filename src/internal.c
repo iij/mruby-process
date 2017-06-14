@@ -85,7 +85,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     char **result;
     char *shell;
     const char *tCmd, *fCmd;
-	char buf[80];
+  	char buf[80];
     mrb_value argv0 = mrb_nil_value();
 
     ai = mrb_gc_arena_save(mrb);
@@ -101,12 +101,17 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     tCmd = mrb_string_value_ptr(mrb, argv[0]);
     fCmd = dln_find_exe_r(tCmd, 0, buf, sizeof(buf));
 
+
     do_exit = !fCmd && strncmp("exit", tCmd, 4) == 0;
     use_cmd = (!strrchr(tCmd, ' ') && (fCmd || (!do_exit && argc > 1))) ? 1 : 0;
+
+    use_cmd = use_cmd && fCmd;
 
     if (use_cmd) {
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
         mrb_execarg_argv_to_strv(mrb, argv, argc, result);
+        // result[0] = fCmd;
+        // result[1] =
     } else {
         argc   = 3;
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
@@ -190,7 +195,6 @@ mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **re
 
     for (i = 0; i < len; i++) {
         buf = (char *)mrb_string_value_cstr(mrb, &argv[i]);
-
         *result = buf;
         result++;
     }

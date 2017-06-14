@@ -372,12 +372,11 @@ spawnv(const char *shell, char *const argv[], mrb_value in, mrb_value out, mrb_v
     WCHAR *wcmd, *wshell;
     pid_t ret = -1;
     char *cmd = argv_to_str(argv);
-    char tCmd[strlen(cmd)];
     char tShell[strlen(shell)];
     HANDLE input, output, error;
 
-    strcpy(tCmd,cmd);
     strcpy(tShell,shell);
+
 
     if(mrb_cptr_p(in)){
       input = mrb_cptr(in);
@@ -393,7 +392,8 @@ spawnv(const char *shell, char *const argv[], mrb_value in, mrb_value out, mrb_v
 
 
     wshell = str_to_wstr(tShell, strlen(tShell));
-    wcmd   = str_to_wstr(tCmd, strlen(tCmd));
+    wcmd   = str_to_wstr(cmd, strlen(cmd));
+
 
     ret = child_result(CreateChild(wshell, wcmd, NULL, input, output, error, 0, NULL), P_NOWAIT);
 
@@ -489,7 +489,7 @@ CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
         return NULL;
     }
 
-    fRet = CreateProcessW(shell, (WCHAR*) cmd, psa, psa,
+    fRet = CreateProcessW(shell, cmd, psa, psa,
                           psa->bInheritHandle, dwCreationFlags, env, NULL,
                           &aStartupInfo, &aProcessInformation);
 

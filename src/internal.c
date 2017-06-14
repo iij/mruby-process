@@ -110,8 +110,6 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     if (use_cmd) {
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
         mrb_execarg_argv_to_strv(mrb, argv, argc, result);
-        // result[0] = fCmd;
-        // result[1] =
     } else {
         argc   = 3;
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));

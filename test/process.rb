@@ -158,7 +158,6 @@ assert('Process.spawn', 'pipe') do
 
     assert_include read('tmp/pipe.txt'), 'GNU readelf (GNU Binutils)'
 
-    # assert_equal var * 2, read('tmp/pipe.txt')
   ensure
     IO._sysclose(pip) if OS.posix?
   end

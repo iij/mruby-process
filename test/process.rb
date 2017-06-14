@@ -34,7 +34,7 @@ end if OS.windows?
 
 def read(path)
   f = File.open(path)
-  f.read.to_s.strip.sub("\r", '').sub("\n", '')
+  f.read.to_s.strip.sub("\r", '').sub("\n", '').downcase
 ensure
   f.close if f
 end
@@ -129,6 +129,7 @@ end
 assert('Process.spawn', 'env') do
   var = "x#{ENV['RAND']}"
   env = OS.posix? ? '$MYVAR' : '%MYVAR%'
+
   pid = spawn({ MYVAR: var }, "echo #{env} > tmp/spawn.txt")
 
   wait_for_pid(pid)
@@ -140,6 +141,7 @@ assert('Process.spawn', 'pipe') do
   begin
     var = ENV['RAND']
     pip = IO.sysopen('tmp/pipe.txt', 'w')
+
     pid = spawn("echo #{var}", out: pip)
 
     wait_for_pid(pid)
@@ -149,15 +151,12 @@ assert('Process.spawn', 'pipe') do
     pid = spawn({ MYVAR: var }, "echo #{env}", out: pip)
 
     wait_for_pid(pid)
-
     assert_equal var * 2, read('tmp/pipe.txt')
 
-    assert_nothing_raised{ pid = spawn("readelf", "-v", out: pip)}
+    pid = spawn 'ruby', '-v', out: pip
 
     wait_for_pid(pid)
-
-    assert_include read('tmp/pipe.txt'), 'GNU readelf (GNU Binutils)'
-
+    assert_include read('tmp/pipe.txt'), 'ruby'
   ensure
     IO._sysclose(pip) if OS.posix?
   end

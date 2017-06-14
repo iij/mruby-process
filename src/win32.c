@@ -279,91 +279,55 @@ kill(pid_t pid, int sig)
     return ret;
 }
 
-void PrintStringArray( char *s[], size_t n )
-{
-    for ( char **p = s; p < s + n; ++p )
-    {
-        puts( *p );
-    }
-    printf( "\n" );
-}
-
-
 pid_t
 spawnve(const char *shell, char *const argv[], char *const envp[], mrb_value in, mrb_value out, mrb_value err)
 {
+    LPTSTR lpszCurrentVariable;
+    TCHAR chNewEnv[BUFSIZE];
+    HANDLE input, output, error;
 
-  LPTSTR lpszCurrentVariable;
-  TCHAR chNewEnv[BUFSIZE];
-  HANDLE input, output, error;
+    int i     = 0;
+    char* env = envp[i];
+    pid_t ret = -1;
+    char *cmd = argv_to_str(argv);
 
-  int i     = 0;
-  char* env = envp[i];
-  pid_t ret = -1;
-  char *cmd = argv_to_str(argv);
+    WCHAR *wcmd, *wshell;
+    char tCmd[strlen(cmd)];
+    char tShell[strlen(shell)];
 
-  WCHAR *wcmd, *wshell;
-  char tCmd[strlen(cmd)];
-  char tShell[strlen(shell)];
+    input  = mrb_cptr_p(in) ? mrb_cptr(in) : GetStdHandle(STD_INPUT_HANDLE);
+    output = mrb_cptr_p(out) ? mrb_cptr(out) : GetStdHandle(STD_OUTPUT_HANDLE);
+    error  = mrb_cptr_p(err) ? mrb_cptr(err) : GetStdHandle(STD_ERROR_HANDLE);
 
+    lpszCurrentVariable = (LPTSTR) chNewEnv;
 
-  if(mrb_cptr_p(in)){
-    input = mrb_cptr(in);
-  }
+    while (env != NULL) {
+        if (FAILED(strcpy(lpszCurrentVariable, TEXT(env)))) {
+            printf("env-string copy failed\n");
+            return FALSE;
+        }
 
-  if(mrb_cptr_p(out)){
-    output = mrb_cptr(out);
-  }
+        lpszCurrentVariable += lstrlen(lpszCurrentVariable) + 1;
 
-  if(mrb_cptr_p(err)){
-    error = mrb_cptr(err);
-  }
+        i++;
+        env = envp[i];
+    }
 
-  lpszCurrentVariable = (LPTSTR) chNewEnv;
+    *lpszCurrentVariable = (TCHAR)0;
 
-  while (env != NULL) {
-    if (FAILED(strcpy(lpszCurrentVariable, TEXT(env))))
-      {
-        printf("env-string copy failed\n");
-        return FALSE;
-      }
+    strcpy(tCmd,cmd);
+    strcpy(tShell,shell);
 
-      lpszCurrentVariable += lstrlen(lpszCurrentVariable) + 1;
+    wshell = str_to_wstr(tShell, strlen(tShell));
+    wcmd   = str_to_wstr(tCmd, strlen(tCmd));
 
-      i++;
-      env = envp[i];
-  }
+    ret = child_result(CreateChild(wshell, wcmd, NULL, input, output, error, 0, (LPVOID) chNewEnv), P_NOWAIT);
 
+    free(wshell);
+    free(wcmd);
+    free(cmd);
 
-
-  // Terminate the block with a NULL byte.
-
-  *lpszCurrentVariable = (TCHAR)0;
-
-  // Create the child process, specifying a new environment block.
-
-  // SecureZeroMemory(&si, sizeof(STARTUPINFO));
-  // si.cb = sizeof(STARTUPINFO);
-  //  TODO eventuell relevant für environment?
-  // #ifdef UNICODE
-  // dwFlags = CREATE_UNICODE_ENVIRONMENT;
-  // #endif
-
-  strcpy(tCmd,cmd);
-  strcpy(tShell,shell);
-
-  wshell = str_to_wstr(tShell, strlen(tShell));
-  wcmd   = str_to_wstr(tCmd, strlen(tCmd));
-
-
-
-  ret = child_result(CreateChild(wshell, wcmd, NULL, input, output, error, 0, (LPVOID) chNewEnv), P_NOWAIT);
-
-  free(wshell);
-  free(wcmd);
-  free(cmd);
-
-  return ret;
+    return ret;
 }
 
 pid_t
@@ -375,27 +339,17 @@ spawnv(const char *shell, char *const argv[], mrb_value in, mrb_value out, mrb_v
     char tShell[strlen(shell)];
     HANDLE input, output, error;
 
-    strcpy(tShell,shell);
+    strcpy(tShell, shell);
 
-
-    if(mrb_cptr_p(in)){
-      input = mrb_cptr(in);
-    }
-
-    if(mrb_cptr_p(out)){
-      output = mrb_cptr(out);
-    }
-
-    if(mrb_cptr_p(err)){
-      error = mrb_cptr(err);
-    }
-
+    input  = mrb_cptr_p(in) ? mrb_cptr(in) : GetStdHandle(STD_INPUT_HANDLE);
+    output = mrb_cptr_p(out) ? mrb_cptr(out) : GetStdHandle(STD_OUTPUT_HANDLE);
+    error  = mrb_cptr_p(err) ? mrb_cptr(err) : GetStdHandle(STD_ERROR_HANDLE);
 
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(cmd, strlen(cmd));
 
-
-    ret = child_result(CreateChild(wshell, wcmd, NULL, input, output, error, 0, NULL), P_NOWAIT);
+    ret = child_result(CreateChild(
+        wshell, wcmd, NULL, input, output, error, 0, NULL), P_NOWAIT);
 
     free(wshell);
     free(wcmd);
@@ -489,7 +443,7 @@ CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
         return NULL;
     }
 
-    fRet = CreateProcessW(shell, cmd, psa, psa,
+    fRet = CreateProcessW(shell, (WCHAR *)cmd, psa, psa,
                           psa->bInheritHandle, dwCreationFlags, env, NULL,
                           &aStartupInfo, &aProcessInformation);
 

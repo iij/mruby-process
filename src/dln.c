@@ -72,10 +72,6 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
     struct stat st;
     size_t i, fnlen, fspace;
 
-    if(!path)
-      return NULL;
-
-
 #if !defined(__APPLE__) && !defined(__linux__)
     static const char extension[][5] = {
         ".exe", ".com", ".cmd", ".bat"
@@ -86,6 +82,9 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
 #endif
 
     const char *p = fname;
+
+    if(!path)
+      return NULL;  
 
 #define RETURN_IF(expr) if (expr) return (char *)fname;
 
@@ -100,12 +99,12 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
 # ifndef CharNext
 # define CharNext(p) ((p)+1)
 # endif
-// # ifdef DOSISH_DRIVE_LETTER
+# ifdef DOSISH_DRIVE_LETTER
     if (((p[0] | 0x20) - 'a') < 26  && p[1] == ':') {
         p += 2;
         is_abs = 1;
     }
-// # endif
+# endif
     switch (*p) {
       case '/': case '\\':
         is_abs = 1;

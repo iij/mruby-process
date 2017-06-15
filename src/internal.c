@@ -102,7 +102,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     }
 
     tCmd = mrb_string_value_ptr(mrb, argv[0]);
-    // fCmd = NULL;
+
     fCmd = dln_find_exe_r(tCmd, NULL, buf, sizeof(buf));
 
     do_exit = !fCmd && strncmp("exit", tCmd, 4) == 0;

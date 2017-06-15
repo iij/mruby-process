@@ -394,6 +394,8 @@ CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
     SECURITY_ATTRIBUTES sa;
     struct ChildRecord *child;
 
+
+
     if (!cmd && !shell)
         return NULL;
 

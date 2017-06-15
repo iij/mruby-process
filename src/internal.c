@@ -43,6 +43,7 @@ typedef struct mrb_execarg {
 
 static int mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **result);
 static void mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, mrb_value opts, struct mrb_execarg *eargp);
+static int mrb_build_shell_array(mrb_state *mrb, mrb_value *argv, mrb_int len, char *shell, char *shell_mod, char **result);
 
 struct mrb_execarg*
 mrb_execarg_new(mrb_state *mrb)
@@ -83,10 +84,12 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
 {
     int ai, use_cmd, do_exit;
     char **result;
-    char *shell;
+    char *shell, *shell_mod;
     const char *tCmd, *fCmd;
-    char buf[80];
+    char buf[160];
     mrb_value argv0 = mrb_nil_value();
+
+
 
     ai = mrb_gc_arena_save(mrb);
 
@@ -99,7 +102,8 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     }
 
     tCmd = mrb_string_value_ptr(mrb, argv[0]);
-    fCmd = dln_find_exe_r(tCmd, 0, buf, sizeof(buf));
+    // fCmd = NULL;
+    fCmd = dln_find_exe_r(tCmd, NULL, buf, sizeof(buf));
 
     do_exit = !fCmd && strncmp("exit", tCmd, 4) == 0;
     use_cmd = (!strrchr(tCmd, ' ') && (fCmd || (!do_exit && argc > 1))) ? 1 : 0;
@@ -110,22 +114,21 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
         mrb_execarg_argv_to_strv(mrb, argv, argc, result);
     } else {
-        argc   = 3;
-        result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
+
+        result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 3));
 
     #if defined(__APPLE__) || defined(__linux__)
         shell = getenv("SHELL");
         if (!shell) shell = strdup("bin/sh");
-        result[1] = strdup("-c");
+        shell_mod = strdup("-c");
     #else
         shell = getenv("ComSpec");
         if (!shell) shell = strdup("C:\\WINDOWS\\system32\\cmd.exe");
-        result[1] = strdup("/c");
+        shell_mod = strdup("/c");
     #endif
-        result[0] = shell;
-        result[2] = mrb_str_to_cstr(mrb, argv[0]);
+        mrb_build_shell_array(mrb, argv, argc, shell, shell_mod, result);
+        argc+=2;
     }
-
     result[argc] = NULL;
 
 #if defined(__APPLE__) || defined(__linux__)
@@ -141,6 +144,7 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     if (mrb_bool(argv0)) {
         result[0] = mrb_str_to_cstr(mrb, argv0);
     }
+
 
     eargp->envp     = NULL;
     eargp->filename = result[0];
@@ -195,11 +199,37 @@ mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **re
         *result = buf;
         result++;
     }
-
     *result = NULL;
     result -= i;
 
     mrb_gc_arena_restore(mrb, ai);
+    return 0;
+}
 
+static int
+mrb_build_shell_array(mrb_state *mrb, mrb_value *argv, mrb_int len, char *shell, char *shell_mod, char **result)
+{
+    char *buf;
+    int i, ai;
+
+    if (len < 1)
+        mrb_raise(mrb, E_ARGUMENT_ERROR, "must have at least 1 argument");
+
+    ai = mrb_gc_arena_save(mrb);
+
+    *result = shell;
+    result++;
+    *result = shell_mod;
+    result++;
+
+    for (i = 0; i < len; i++) {
+        buf = (char *)mrb_string_value_cstr(mrb, &argv[i]);
+        *result = buf;
+        result++;
+    }
+    *result = NULL;
+    result -= i;
+
+    mrb_gc_arena_restore(mrb, ai);
     return 0;
 }

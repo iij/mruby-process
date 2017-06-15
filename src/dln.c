@@ -19,6 +19,9 @@
  * SOFTWARE.
  */
 
+//TODO entfernen, nur für debug
+#include <stdio.h>
+
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
@@ -43,7 +46,7 @@ dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size)
         path = getenv(PATH_ENV);
         if (path) path = strdup(path);
     }
-
+#if defined(__APPLE__) || defined(__linux__)
     if (!path) {
         path =
             "/usr/local/bin" PATH_SEP
@@ -52,6 +55,8 @@ dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size)
             "/bin" PATH_SEP
             ".";
     }
+#endif
+
 
     buf = dln_find_1(fname, path, buf, size, 1);
 
@@ -66,6 +71,10 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
     register char *bp;
     struct stat st;
     size_t i, fnlen, fspace;
+
+    if(!path)
+      return NULL;
+
 
 #if !defined(__APPLE__) && !defined(__linux__)
     static const char extension[][5] = {
@@ -91,12 +100,12 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
 # ifndef CharNext
 # define CharNext(p) ((p)+1)
 # endif
-# ifdef DOSISH_DRIVE_LETTER
+// # ifdef DOSISH_DRIVE_LETTER
     if (((p[0] | 0x20) - 'a') < 26  && p[1] == ':') {
         p += 2;
         is_abs = 1;
     }
-# endif
+// # endif
     switch (*p) {
       case '/': case '\\':
         is_abs = 1;
@@ -220,7 +229,7 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
                     continue;
                 }
                 strcpy(bp + i, extension[j]);
-                if (stat(fbuf, &st) == 0){
+                if (access(fbuf, X_OK) == 0){
                     return fbuf;
                 }
             }
@@ -233,7 +242,9 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
                 return fbuf;
             }
         /* looking for executable */
-        if (access(fbuf, X_OK) == 0) return fbuf;
+          if (access(fbuf, X_OK) == 0){
+             return fbuf;
+           }
         }
         next:
         /* if not, and no other alternatives, life is bleak */

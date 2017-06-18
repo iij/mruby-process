@@ -153,7 +153,6 @@ assert('Process.spawn', 'pipe') do
     wait_for_pid(pid)
     assert_equal var * 2, read('tmp/pipe.txt')
 
-
     pid = spawn 'ruby', '-v', out: pip
 
     wait_for_pid(pid)

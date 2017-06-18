@@ -295,7 +295,7 @@ spawnve(const char *shell, char *const argv[], char *const envp[], mrb_value in,
     char tCmd[strlen(cmd)];
     char tShell[strlen(shell)];
 
-    input  = mrb_cptr_p(in) ? mrb_cptr(in) : GetStdHandle(STD_INPUT_HANDLE);
+    input  = mrb_cptr_p(in)  ? mrb_cptr(in)  : GetStdHandle(STD_INPUT_HANDLE);
     output = mrb_cptr_p(out) ? mrb_cptr(out) : GetStdHandle(STD_OUTPUT_HANDLE);
     error  = mrb_cptr_p(err) ? mrb_cptr(err) : GetStdHandle(STD_ERROR_HANDLE);
 
@@ -341,15 +341,15 @@ spawnv(const char *shell, char *const argv[], mrb_value in, mrb_value out, mrb_v
 
     strcpy(tShell, shell);
 
-    input  = mrb_cptr_p(in) ? mrb_cptr(in) : GetStdHandle(STD_INPUT_HANDLE);
+    input  = mrb_cptr_p(in)  ? mrb_cptr(in)  : GetStdHandle(STD_INPUT_HANDLE);
     output = mrb_cptr_p(out) ? mrb_cptr(out) : GetStdHandle(STD_OUTPUT_HANDLE);
     error  = mrb_cptr_p(err) ? mrb_cptr(err) : GetStdHandle(STD_ERROR_HANDLE);
 
     wshell = str_to_wstr(tShell, strlen(tShell));
     wcmd   = str_to_wstr(cmd, strlen(cmd));
 
-    ret = child_result(CreateChild(
-        wshell, wcmd, NULL, input, output, error, 0, NULL), P_NOWAIT);
+    ret    = child_result(
+        CreateChild(wshell, wcmd, NULL, input, output, error, 0, NULL), P_NOWAIT);
 
     free(wshell);
     free(wcmd);
@@ -393,8 +393,6 @@ CreateChild(const WCHAR *shell, const WCHAR *cmd, SECURITY_ATTRIBUTES *psa,
     PROCESS_INFORMATION aProcessInformation;
     SECURITY_ATTRIBUTES sa;
     struct ChildRecord *child;
-
-
 
     if (!cmd && !shell)
         return NULL;

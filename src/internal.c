@@ -89,8 +89,6 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     char buf[160];
     mrb_value argv0 = mrb_nil_value();
 
-
-
     ai = mrb_gc_arena_save(mrb);
 
     if (mrb_hash_p(opts)) {
@@ -102,7 +100,6 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     }
 
     tCmd = mrb_string_value_ptr(mrb, argv[0]);
-
     fCmd = dln_find_exe_r(tCmd, NULL, buf, sizeof(buf));
 
     do_exit = !fCmd && strncmp("exit", tCmd, 4) == 0;
@@ -114,7 +111,6 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 1));
         mrb_execarg_argv_to_strv(mrb, argv, argc, result);
     } else {
-
         result = (char **)mrb_malloc(mrb, sizeof(char *) * (argc + 3));
 
     #if defined(__APPLE__) || defined(__linux__)
@@ -144,7 +140,6 @@ mrb_execarg_fill(mrb_state *mrb, mrb_value env, mrb_value *argv, mrb_int argc, m
     if (mrb_bool(argv0)) {
         result[0] = mrb_str_to_cstr(mrb, argv0);
     }
-
 
     eargp->envp     = NULL;
     eargp->filename = result[0];
@@ -199,10 +194,12 @@ mrb_execarg_argv_to_strv(mrb_state *mrb, mrb_value *argv, mrb_int len, char **re
         *result = buf;
         result++;
     }
+
     *result = NULL;
     result -= i;
 
     mrb_gc_arena_restore(mrb, ai);
+
     return 0;
 }
 
@@ -219,6 +216,7 @@ mrb_build_shell_array(mrb_state *mrb, mrb_value *argv, mrb_int len, char *shell,
 
     *result = shell;
     result++;
+
     *result = shell_mod;
     result++;
 
@@ -227,9 +225,11 @@ mrb_build_shell_array(mrb_state *mrb, mrb_value *argv, mrb_int len, char *shell,
         *result = buf;
         result++;
     }
+
     *result = NULL;
     result -= i;
 
     mrb_gc_arena_restore(mrb, ai);
+
     return 0;
 }

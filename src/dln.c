@@ -19,9 +19,6 @@
  * SOFTWARE.
  */
 
-//TODO entfernen, nur für debug
-#include <stdio.h>
-
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
@@ -46,6 +43,7 @@ dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size)
         path = getenv(PATH_ENV);
         if (path) path = strdup(path);
     }
+
 #if defined(__APPLE__) || defined(__linux__)
     if (!path) {
         path =
@@ -56,7 +54,6 @@ dln_find_exe_r(const char *fname, const char *path, char *buf, size_t size)
             ".";
     }
 #endif
-
 
     buf = dln_find_1(fname, path, buf, size, 1);
 
@@ -84,7 +81,7 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
     const char *p = fname;
 
     if(!path)
-      return NULL;  
+      return NULL;
 
 #define RETURN_IF(expr) if (expr) return (char *)fname;
 
@@ -97,7 +94,7 @@ dln_find_1(const char *fname, const char *path, char *fbuf, size_t size, int exe
 
 #if !defined(__APPLE__) && !defined(__linux__)
 # ifndef CharNext
-# define CharNext(p) ((p)+1)
+#  define CharNext(p) ((p)+1)
 # endif
 # ifdef DOSISH_DRIVE_LETTER
     if (((p[0] | 0x20) - 'a') < 26  && p[1] == ':') {

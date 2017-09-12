@@ -136,8 +136,7 @@ assert('Process.spawn', 'env') do
   assert_equal var, read('tmp/spawn.txt')
 end
 
-# TODO: More tests for edge cases! whatif no valid pipe,
-assert('Process.spawn', 'pipe') do
+assert('Process.spawn', 'pipe stdout') do
   begin
     var = ENV['RAND']
     pip = IO.sysopen('tmp/pipe.txt', 'w')
@@ -162,7 +161,7 @@ assert('Process.spawn', 'pipe') do
   end
 end
 
-assert('Process.spawn', 'pipe error') do
+assert('Process.spawn', 'pipe stderr') do
   begin
     pip = IO.sysopen('tmp/pipe.err', 'w')
     pid = spawn('ruby unknown', err: pip)

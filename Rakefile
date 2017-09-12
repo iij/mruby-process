@@ -18,32 +18,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-def target_win32?
-  return true if RUBY_PLATFORM =~ /mingw|mswin/
-  build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
-end
+ENV['MRUBY_CONFIG']  ||= File.expand_path('build_config.rb')
+ENV['MRUBY_VERSION'] ||= 'head'
 
-MRuby::Gem::Specification.new('mruby-process') do |spec|
-  spec.license = 'MIT'
-  spec.authors = 'mruby developers'
-
-  spec.add_test_dependency 'mruby-print', core: 'mruby-print'
-  spec.add_test_dependency 'mruby-env',   mgem: 'mruby-env'
-  spec.add_test_dependency 'mruby-os',    mgem: 'mruby-os'
-
-  spec.mruby.cc.defines << 'HAVE_MRB_PROCESS_H'
-
-  [spec.cc, spec.mruby.cc].each do |cc|
-    cc.include_paths << "#{spec.dir}/include/mruby/ext"
-  end
-
-  ENV['RAND'] = Time.now.to_i.to_s if build.test_enabled?
-
-  if target_win32?
-    spec.objs.delete objfile("#{build_dir}/src/posix")
-    spec.add_test_dependency 'mruby-tiny-io', mgem: 'mruby-tiny-io'
+file :mruby do
+  if ENV['MRUBY_VERSION'] == 'head'
+    sh 'git clone --depth 1 git://github.com/mruby/mruby.git'
   else
-    spec.objs.delete objfile("#{build_dir}/src/win32")
-    spec.add_test_dependency 'mruby-io', mgem: 'mruby-io'
+    sh "curl -L --fail --retry 3 --retry-delay 1 https://github.com/mruby/mruby/archive/#{ENV['MRUBY_VERSION']}.tar.gz -s -o - | tar zxf -" # rubocop:disable LineLength
+    mv "mruby-#{ENV['MRUBY_VERSION']}", 'mruby'
   end
 end
+
+FileUtils.mkdir_p('tmp')
+Rake::Task[:mruby].invoke
+
+namespace :mruby do
+  Dir.chdir('mruby') { load 'Rakefile' }
+end
+
+desc 'compile binary'
+task compile: 'mruby:all'
+
+desc 'test'
+task test: 'mruby:test'
+
+desc 'cleanup'
+task clean: 'mruby:clean'
+
+desc 'cleanup all'
+task cleanall: 'mruby:deep_clean'

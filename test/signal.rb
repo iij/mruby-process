@@ -18,32 +18,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-def target_win32?
-  return true if RUBY_PLATFORM =~ /mingw|mswin/
-  build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
+assert('Signal') do
+  assert_kind_of Module, Signal
 end
 
-MRuby::Gem::Specification.new('mruby-process') do |spec|
-  spec.license = 'MIT'
-  spec.authors = 'mruby developers'
+assert('Signal.signame') do
+  assert_equal Signal.signame(2), 'INT'
+  assert_equal Signal.signame(9), 'KILL'
+  assert_equal Signal.signame(0), 'EXIT'
+  assert_nil   Signal.signame(-1)
+end
 
-  spec.add_test_dependency 'mruby-print', core: 'mruby-print'
-  spec.add_test_dependency 'mruby-env',   mgem: 'mruby-env'
-  spec.add_test_dependency 'mruby-os',    mgem: 'mruby-os'
-
-  spec.mruby.cc.defines << 'HAVE_MRB_PROCESS_H'
-
-  [spec.cc, spec.mruby.cc].each do |cc|
-    cc.include_paths << "#{spec.dir}/include/mruby/ext"
-  end
-
-  ENV['RAND'] = Time.now.to_i.to_s if build.test_enabled?
-
-  if target_win32?
-    spec.objs.delete objfile("#{build_dir}/src/posix")
-    spec.add_test_dependency 'mruby-tiny-io', mgem: 'mruby-tiny-io'
-  else
-    spec.objs.delete objfile("#{build_dir}/src/win32")
-    spec.add_test_dependency 'mruby-io', mgem: 'mruby-io'
-  end
+assert('Signal.list') do
+  assert_kind_of Hash, Signal.list
+  assert_true Signal.list.any?, 'no signals found'
 end

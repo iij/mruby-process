@@ -18,32 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-def target_win32?
-  return true if RUBY_PLATFORM =~ /mingw|mswin/
-  build.is_a?(MRuby::CrossBuild) && build.host_target.to_s =~ /mingw/
-end
+MRuby::Build.new do |conf|
+  toolchain ENV.fetch('CC', :gcc)
 
-MRuby::Gem::Specification.new('mruby-process') do |spec|
-  spec.license = 'MIT'
-  spec.authors = 'mruby developers'
+  conf.enable_debug
+  conf.enable_test
 
-  spec.add_test_dependency 'mruby-print', core: 'mruby-print'
-  spec.add_test_dependency 'mruby-env',   mgem: 'mruby-env'
-  spec.add_test_dependency 'mruby-os',    mgem: 'mruby-os'
-
-  spec.mruby.cc.defines << 'HAVE_MRB_PROCESS_H'
-
-  [spec.cc, spec.mruby.cc].each do |cc|
-    cc.include_paths << "#{spec.dir}/include/mruby/ext"
-  end
-
-  ENV['RAND'] = Time.now.to_i.to_s if build.test_enabled?
-
-  if target_win32?
-    spec.objs.delete objfile("#{build_dir}/src/posix")
-    spec.add_test_dependency 'mruby-tiny-io', mgem: 'mruby-tiny-io'
-  else
-    spec.objs.delete objfile("#{build_dir}/src/win32")
-    spec.add_test_dependency 'mruby-io', mgem: 'mruby-io'
-  end
+  conf.gem File.expand_path(File.dirname(__FILE__))
 end

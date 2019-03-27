@@ -11,7 +11,7 @@ assert('Process::Status#==') do
   pid2 = process_status_fork 123
   _, st1 = Process.waitpid2(pid1)
   _, st2 = Process.waitpid2(pid2)
-  assert_true st1, st2
+  assert_true st1 == st2
 end
 
 # assert('Process::Status#coredump?') do

@@ -8,11 +8,11 @@ assert('Process.kill') do
 end
 
 assert('Process.pid') do
-  Process.pid is_a? Integer and Process.pid > 0
+  Process.pid.is_a?(Integer) and Process.pid > 0
 end
 
 assert('Process.ppid') do
-  Process.ppid is_a? Integer and Process.ppid > 0
+  Process.ppid.is_a?(Integer) and Process.ppid > 0
 end
 
 assert('$$') do

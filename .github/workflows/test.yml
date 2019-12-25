@@ -1,0 +1,40 @@
+name: Build and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: ${{ github.repository }}
+    - uses: actions/checkout@v2
+      with:
+        repository: mruby/mruby
+        path: mruby
+    - name: Set up Ruby
+      uses: actions/setup-ruby@v1
+    - name: Install GNU Bison
+      run: sudo apt install bison
+    - name: Rake test
+      env:
+        TEMPLATE: |
+          MRuby::Build.new do |conf|
+            toolchain :gcc
+
+            enable_debug
+            conf.enable_bintest
+            conf.enable_test
+
+            conf.gembox 'default'
+            conf.gem '${{ github.repository }}'
+          end
+      run: |
+        printf "${TEMPLATE}" >build_config.rb
+        cd mruby
+        env MRUBY_CONFIG=../build_config.rb rake test
